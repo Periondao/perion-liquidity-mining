@@ -41,7 +41,7 @@ describe("LiquidityMiningManager", function () {
             account4,
             ...signers
         ] = await hre.ethers.getSigners();
-        
+
         const testTokenFactory = new TestToken__factory(deployer);
 
         depositToken = await testTokenFactory.deploy("Deposit Token", "DPST");
@@ -58,11 +58,10 @@ describe("LiquidityMiningManager", function () {
             0,
             0,
             0,
-            ESCROW_DURATION
         );
 
         liquidityMiningManager = await (new LiquidityMiningManager__factory(deployer)).deploy(rewardToken.address, rewardSource.address);
-        
+
 
         // setup rewardSource
         await rewardToken.mint(rewardSource.address, INITIAL_REWARD_MINT);
@@ -79,9 +78,8 @@ describe("LiquidityMiningManager", function () {
                     ESCROW_PORTION,
                     ESCROW_DURATION,
                     0,
-                    ESCROW_PORTION
                 )
-            );         
+            );
         }
 
         // assign gov role to account1
@@ -239,7 +237,7 @@ describe("LiquidityMiningManager", function () {
             for (const pool of pools) {
                 await liquidityMiningManager.addPool(pool.address, parseEther((i + 1).toString()));
                 i ++;
-            } 
+            }
         });
 
         it("Distributing rewards from an address which does not have the REWARD_DISTRIBUTOR_ROLE", async() => {
@@ -262,7 +260,7 @@ describe("LiquidityMiningManager", function () {
             await liquidityMiningManager.addPool("0x0000000000000000000000000000000000000001", POOL_WEIGHT);
             const totalWeight = await liquidityMiningManager.totalWeight();
             await liquidityMiningManager.setRewardPerSecond(REWARDS_PER_SECOND);
-            
+
             const rewardSourceBalanceBefore = await rewardToken.balanceOf(rewardSource.address);
             const lastDistributionBefore = await liquidityMiningManager.lastDistribution();
             await liquidityMiningManager.distributeRewards();
@@ -279,7 +277,7 @@ describe("LiquidityMiningManager", function () {
             const REWARDS_PER_SECOND = parseEther("1");
             // Enable rewards
             await liquidityMiningManager.setRewardPerSecond(REWARDS_PER_SECOND);
-            
+
             const lastDistributionBefore = await liquidityMiningManager.lastDistribution();
             await liquidityMiningManager.distributeRewards();
             const lastDistributionAfter = await liquidityMiningManager.lastDistribution();
@@ -306,13 +304,13 @@ describe("LiquidityMiningManager", function () {
                 weights.push(weight);
                 await liquidityMiningManager.addPool(pool.address, weight);
                 i ++;
-            } 
+            }
         })
 
         it("Adjust weight up", async() => {
             const WEIGHT_INCREMENT = parseEther("1");
             const POOL_ID = 0;
-            
+
             const totalWeightBefore = await liquidityMiningManager.totalWeight();
             const poolBefore = await liquidityMiningManager.pools(POOL_ID);
             await liquidityMiningManager.adjustWeight(POOL_ID, poolBefore.weight.add(WEIGHT_INCREMENT));
@@ -330,7 +328,7 @@ describe("LiquidityMiningManager", function () {
         it("Adjust weight down", async() => {
             const WEIGHT_DECREMENT = parseEther("1");
             const POOL_ID = 0;
-            
+
             const totalWeightBefore = await liquidityMiningManager.totalWeight();
             const poolBefore = await liquidityMiningManager.pools(POOL_ID);
             await liquidityMiningManager.adjustWeight(POOL_ID, poolBefore.weight.sub(WEIGHT_DECREMENT));

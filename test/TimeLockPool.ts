@@ -1,7 +1,6 @@
 import { parseEther } from "@ethersproject/units";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
 import { BigNumber, constants } from "ethers";
 import hre from "hardhat";
 import { TestToken__factory, TimeLockPool__factory } from "../typechain";
@@ -11,8 +10,8 @@ import TimeTraveler from "../utils/TimeTraveler";
 
 const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const ESCROW_PORTION = parseEther("0.77");
-const MAX_BONUS = parseEther("1");
-const MAX_LOCK_DURATION = 60 * 60 * 24 * 365;
+const MAX_BONUS = parseEther("4");
+const MAX_LOCK_DURATION = (60 * 60 * 24 * 365) * 3;
 const INITIAL_MINT = parseEther("1000000");
 
 describe("TimeLockPool", function () {
@@ -28,7 +27,7 @@ describe("TimeLockPool", function () {
     let escrowPool: TimeLockPool;
     let depositToken: TestToken;
     let rewardToken: TestToken;
-    
+
     const timeTraveler = new TimeTraveler(hre.network.provider);
 
     before(async() => {
@@ -50,7 +49,7 @@ describe("TimeLockPool", function () {
         await rewardToken.mint(account1.address, INITIAL_MINT);
 
         const timeLockPoolFactory = new TimeLockPool__factory(deployer);
-        
+
         escrowPool = await timeLockPoolFactory.deploy(
             "ESCROW",
             "ESCRW",
@@ -60,7 +59,6 @@ describe("TimeLockPool", function () {
             0,
             0,
             0,
-            ESCROW_DURATION
         );
 
         timeLockPool = await timeLockPoolFactory.deploy(
@@ -72,16 +70,15 @@ describe("TimeLockPool", function () {
             ESCROW_PORTION,
             ESCROW_DURATION,
             MAX_BONUS,
-            MAX_LOCK_DURATION
         );
 
-        
+
         // connect account1 to all contracts
         timeLockPool = timeLockPool.connect(account1);
         escrowPool = escrowPool.connect(account1);
         depositToken = depositToken.connect(account1);
         rewardToken = rewardToken.connect(account1);
-        
+
         await depositToken.approve(timeLockPool.address, constants.MaxUint256);
 
         await timeTraveler.snapshot();
@@ -126,6 +123,7 @@ describe("TimeLockPool", function () {
             expect(timeLockPoolBalance).to.eq(DEPOSIT_AMOUNT.mul(multiplier).div(constants.WeiPerEther));
             expect(depositTokenBalanceAfter).to.eq(depositTokenBalanceBefore.sub(DEPOSIT_AMOUNT));
         });
+
         it("Trying to lock for longer than max duration should lock for max duration", async() => {
             const depositTokenBalanceBefore = await depositToken.balanceOf(account1.address);
             await timeLockPool.deposit(DEPOSIT_AMOUNT, constants.MaxUint256, account3.address);
@@ -145,7 +143,8 @@ describe("TimeLockPool", function () {
             expect(timeLockPoolBalance).to.eq(DEPOSIT_AMOUNT.mul(constants.WeiPerEther.add(MAX_BONUS)).div(constants.WeiPerEther));
 
             expect(depositTokenBalanceAfter).to.eq(depositTokenBalanceBefore.sub(DEPOSIT_AMOUNT));
-        })
+        });
+
         it("Multiple deposits", async() => {
             const depositTokenBalanceBefore = await depositToken.balanceOf(account1.address);
             await timeLockPool.deposit(DEPOSIT_AMOUNT, constants.MaxUint256, account3.address);
@@ -172,6 +171,7 @@ describe("TimeLockPool", function () {
 
             expect(depositTokenBalanceAfter).to.eq(depositTokenBalanceBefore.sub(DEPOSIT_AMOUNT.mul(2)));
         });
+
         it("Should fail when transfer fails", async() => {
             await depositToken.approve(timeLockPool.address, 0);
             await expect(timeLockPool.deposit(DEPOSIT_AMOUNT, 0, account3.address)).to.be.revertedWith("ERC20: transfer amount exceeds allowance");
@@ -188,7 +188,7 @@ describe("TimeLockPool", function () {
             await expect(timeLockPool.withdraw(0, account1.address)).to.be.revertedWith("TimeLockPool.withdraw: too soon");
         });
 
-        it("Should work", async() => {
+        it("Should be able to withdraw after max lock duration", async() => {
             await timeTraveler.increaseTime(MAX_LOCK_DURATION);
             await timeLockPool.withdraw(0, account3.address);
 
@@ -200,5 +200,5 @@ describe("TimeLockPool", function () {
             expect(totalDeposit).to.eq(0);
             expect(depositTokenBalance).to.eq(DEPOSIT_AMOUNT);
         });
-    });  
+    });
 });

@@ -28,7 +28,7 @@ describe("TimeLockNonTransferablePool", function () {
     let escrowPool: TimeLockNonTransferablePool;
     let depositToken: TestToken;
     let rewardToken: TestToken;
-    
+
     const timeTraveler = new TimeTraveler(hre.network.provider);
 
     before(async() => {
@@ -50,7 +50,7 @@ describe("TimeLockNonTransferablePool", function () {
         await rewardToken.mint(account1.address, INITIAL_MINT);
 
         const timeLockPoolFactory = new TimeLockNonTransferablePool__factory(deployer);
-        
+
         escrowPool = await timeLockPoolFactory.deploy(
             "ESCROW",
             "ESCRW",
@@ -60,7 +60,6 @@ describe("TimeLockNonTransferablePool", function () {
             0,
             0,
             0,
-            ESCROW_DURATION
         );
 
         timeLockPool = await timeLockPoolFactory.deploy(
@@ -72,16 +71,15 @@ describe("TimeLockNonTransferablePool", function () {
             ESCROW_PORTION,
             ESCROW_DURATION,
             MAX_BONUS,
-            MAX_LOCK_DURATION
         );
 
-        
+
         // connect account1 to all contracts
         timeLockPool = timeLockPool.connect(account1);
         escrowPool = escrowPool.connect(account1);
         depositToken = depositToken.connect(account1);
         rewardToken = rewardToken.connect(account1);
-        
+
         await depositToken.approve(timeLockPool.address, constants.MaxUint256);
         await timeLockPool.deposit(DEPOSIT_AMOUNT, constants.MaxUint256, account1.address);
 
