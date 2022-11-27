@@ -2,8 +2,8 @@
 pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "../interfaces/IBasePool.sol";
@@ -12,7 +12,7 @@ import "../interfaces/ITimeLockPool.sol";
 import "./AbstractRewards.sol";
 import "./TokenSaver.sol";
 
-abstract contract BasePool is ERC20Votes, AbstractRewards, IBasePool, TokenSaver {
+abstract contract BasePool is ERC20, AbstractRewards, IBasePool, TokenSaver {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using SafeCast for int256;
@@ -33,7 +33,7 @@ abstract contract BasePool is ERC20Votes, AbstractRewards, IBasePool, TokenSaver
         address _escrowPool,
         uint256 _escrowPortion,
         uint256 _escrowDuration
-    ) ERC20Permit(_name) ERC20(_name, _symbol) AbstractRewards(balanceOf, totalSupply) {
+    ) ERC20(_name, _symbol) AbstractRewards(balanceOf, totalSupply) {
         require(_escrowPortion <= 1e18, "BasePool.constructor: Cannot escrow more than 100%");
         require(_depositToken != address(0), "BasePool.constructor: Deposit token must be set");
         depositToken = IERC20(_depositToken);
@@ -51,7 +51,7 @@ abstract contract BasePool is ERC20Votes, AbstractRewards, IBasePool, TokenSaver
 		super._mint(_account, _amount);
         _correctPoints(_account, -(_amount.toInt256()));
 	}
-	
+
 	function _burn(address _account, uint256 _amount) internal virtual override {
 		super._burn(_account, _amount);
         _correctPoints(_account, _amount.toInt256());
