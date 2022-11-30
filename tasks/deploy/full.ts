@@ -5,63 +5,63 @@ import sleep from "../../utils/sleep";
 import { constants, utils } from "ethers";
 import { captureRejectionSymbol } from "events";
 
-const MC = "0x949d48eca67b17269629c7194f4b727d4ef9e5d6";
-const LP = "0xcCb63225a7B19dcF66717e4d40C9A72B39331d61";
-const multisig = "0x7e9e4c0876b2102f33a1d82117cc73b7fddd0032";
-const ONE_YEAR = 60 * 60 * 24 * 365;
+const PERC = "0x60bE1e1fE41c1370ADaF5d8e66f07Cf1C2Df2268";
+const LP = "0x45b6ffb13e5206dafe2cc8780e4ddc0e32496265";
+const multisig = "0x12D73beE50F0b9E06B35Fdef93E563C965796482";
+const THREE_YEARS = (60 * 60 * 24 * 365) * 3;
 
 task("deploy-liquidity-mining")
     .addFlag("verify")
     .setAction(async(taskArgs, { run, ethers }) => {
     const signers = await ethers.getSigners();
     const liquidityMiningManager:LiquidityMiningManager = await run("deploy-liquidity-mining-manager", {
-        rewardToken: MC,
-        rewardSource: multisig, //multi sig is where the rewards will be stored. 
+        rewardToken: PERC,
+        rewardSource: multisig, //multi sig is where the rewards will be stored.
         verify: taskArgs.verify
     });
 
     // await liquidityMiningManager.deployed();
 
     const escrowPool:TimeLockNonTransferablePool = await run("deploy-time-lock-non-transferable-pool", {
-        name: "Escrowed Merit Circle",
-        symbol: "EMC",
-        depositToken: MC,
-        rewardToken: MC, //leaves possibility for xSushi like payouts on staked MC
+        name: "Escrowed Perion",
+        symbol: "ePERC",
+        depositToken: PERC,
+        rewardToken: PERC, // leaves possibility for xSushi like payouts on staked PERC
         escrowPool: constants.AddressZero,
-        escrowPortion: "0", //rewards from pool itself are not locked
+        escrowPortion: "0", // rewards from pool itself are not locked
         escrowDuration: "0", // no rewards escrowed so 0 escrow duration
         maxBonus: "0", // no bonus needed for longer locking durations
-        maxLockDuration: (ONE_YEAR * 10).toString(), // Can be used to lock up to 10 years
+        maxLockDuration: (THREE_YEARS * 10).toString(), // Can be used to lock up to 3 years
         verify: taskArgs.verify
     });
 
     // await escrowPool.deployed();
 
     const mcPool:TimeLockNonTransferablePool = await run("deploy-time-lock-non-transferable-pool", {
-        name: "Staked Merit Circle",
-        symbol: "SMC",
-        depositToken: MC, // users stake MC tokens
-        rewardToken: MC, // rewards is MC token
+        name: "Staked Perion",
+        symbol: "sPERC",
+        depositToken: PERC, // users stake PERC tokens
+        rewardToken: PERC, // rewards is PERC token
         escrowPool: escrowPool.address, // Rewards are locked in the escrow pool
         escrowPortion: "1", // 100% is locked
-        escrowDuration: ONE_YEAR.toString(), // locked for 1 year
-        maxBonus: "1", // Bonus for longer locking is 1. When locking for longest duration you'll receive 2x vs no lock limit
-        maxLockDuration: ONE_YEAR.toString(), // Users can lock up to 1 year
+        escrowDuration: THREE_YEARS.toString(), // locked for 1 year
+        maxBonus: "5", // Bonus for longer locking is 1. When locking for longest duration you'll receive 5x
+        maxLockDuration: THREE_YEARS.toString(), // Users can lock up to 3 years
         verify: taskArgs.verify
     });
 
     // await mcPool.deployed();
 
     const mcLPPool:TimeLockNonTransferablePool = await run("deploy-time-lock-non-transferable-pool", {
-        name: "Staked Merit Circle Uniswap LP",
-        symbol: "SMCUNILP",
+        name: "Staked Perc Sushi LP",
+        symbol: "sPERCPOOL",
         depositToken: LP, // users stake LP tokens
-        rewardToken: MC, // rewards is MC token
+        rewardToken: PERC, // rewards is PERC token
         escrowPool: escrowPool.address, // Rewards are locked in the escrow pool
         escrowPortion: "1", // 100% is locked
-        escrowDuration: ONE_YEAR.toString(), // locked for 1 year
-        maxBonus: "1", // Bonus for longer locking is 1. When locking for longest duration you'll receive 2x vs no lock limit
-        maxLockDuration: ONE_YEAR.toString(), // Users can lock up to 1 year
+        escrowDuration: THREE_YEARS.toString(), // locked for 3 years
+        maxBonus: "5", // Bonus for longer locking is 1. When locking for longest duration you'll receive 5x
+        maxLockDuration: THREE_YEARS.toString(), // Users can lock up to 3 years
         verify: taskArgs.verify
     });
 
@@ -82,9 +82,9 @@ task("deploy-liquidity-mining")
     (await (await liquidityMiningManager.grantRole(REWARD_DISTRIBUTOR_ROLE, signers[0].address)).wait(3));
 
     // Add pools
-    console.log("Adding MC Pool");
+    console.log("Adding PERC Pool");
     await (await liquidityMiningManager.addPool(mcPool.address, utils.parseEther("0.2"))).wait(3);
-    console.log("Adding MC LP Pool");
+    console.log("Adding PERC LP Pool");
     await (await liquidityMiningManager.addPool(mcLPPool.address, utils.parseEther("0.8"))).wait(3);
 
     // Assign GOV, DISTRIBUTOR and DEFAULT_ADMIN roles to multisig

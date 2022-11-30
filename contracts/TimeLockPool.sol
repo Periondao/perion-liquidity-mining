@@ -13,9 +13,9 @@ contract TimeLockPool is BasePool, ITimeLockPool {
     using SafeERC20 for IERC20;
 
     uint256 public immutable maxBonus;
-    uint256 public immutable maxLockDuration;
-    uint256 public constant MIN_LOCK_DURATION = 10 minutes;
-    
+    uint256 public immutable maxLockDuration = 1095 days; // 3 years
+    uint256 public constant MIN_LOCK_DURATION = 30 days; // one month
+
     mapping(address => Deposit[]) public depositsOf;
 
     struct Deposit {
@@ -31,12 +31,9 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         address _escrowPool,
         uint256 _escrowPortion,
         uint256 _escrowDuration,
-        uint256 _maxBonus,
-        uint256 _maxLockDuration
+        uint256 _maxBonus
     ) BasePool(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration) {
-        require(_maxLockDuration >= MIN_LOCK_DURATION, "TimeLockPool.constructor: max lock duration must be greater or equal to mininmum lock duration");
         maxBonus = _maxBonus;
-        maxLockDuration = _maxLockDuration;
     }
 
     event Deposited(uint256 amount, uint256 duration, address indexed receiver, address indexed from);
@@ -68,7 +65,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         Deposit memory userDeposit = depositsOf[_msgSender()][_depositId];
         require(block.timestamp >= userDeposit.end, "TimeLockPool.withdraw: too soon");
 
-        //                      No risk of wrapping around on casting to uint256 since deposit end always > deposit start and types are 64 bits
+        // No risk of wrapping around on casting to uint256 since deposit end always > deposit start and types are 64 bits
         uint256 shareAmount = userDeposit.amount * getMultiplier(uint256(userDeposit.end - userDeposit.start)) / 1e18;
 
         // remove Deposit
@@ -77,7 +74,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
 
         // burn pool shares
         _burn(_msgSender(), shareAmount);
-        
+
         // return tokens
         depositToken.safeTransfer(_receiver, userDeposit.amount);
         emit Withdrawn(_depositId, _receiver, _msgSender(), userDeposit.amount);
