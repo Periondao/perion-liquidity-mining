@@ -45,7 +45,7 @@ task("deploy-liquidity-mining")
         escrowPool: escrowPool.address, // Rewards are locked in the escrow pool
         escrowPortion: "1", // 100% is locked
         escrowDuration: THREE_YEARS.toString(), // locked for 1 year
-        maxBonus: "5", // Bonus for longer locking is 1. When locking for longest duration you'll receive 5x
+        maxBonus: "4", // Bonus for longer locking is 1. When locking for longest duration you'll receive 5x
         maxLockDuration: THREE_YEARS.toString(), // Users can lock up to 3 years
         verify: taskArgs.verify
     });
@@ -60,7 +60,7 @@ task("deploy-liquidity-mining")
         escrowPool: escrowPool.address, // Rewards are locked in the escrow pool
         escrowPortion: "1", // 100% is locked
         escrowDuration: THREE_YEARS.toString(), // locked for 3 years
-        maxBonus: "5", // Bonus for longer locking is 1. When locking for longest duration you'll receive 5x
+        maxBonus: "4", // Bonus for longer locking is 1. When locking for longest duration you'll receive 5x
         maxLockDuration: THREE_YEARS.toString(), // Users can lock up to 3 years
         verify: taskArgs.verify
     });
