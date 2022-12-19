@@ -1,6 +1,6 @@
-# Merit Circle Liquidity Mining
+# Perion Liquidity Mining
 
-See docs at 
+See docs at
 
 
 ## Usage

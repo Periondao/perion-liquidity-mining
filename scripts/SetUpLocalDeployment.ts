@@ -18,19 +18,19 @@ async function deployTokens() {
     const signers = await ethers.getSigners();
 
     const MCToken: TestFaucetToken = await (new TestFaucetToken__factory(signers[0])).deploy(
-        "Merit Circle",
-        "MC"
+        "Perion",
+        "PERC"
     );
-    
+
     await MCToken.deployed();
     console.log(`MCToken deployed to ${MCToken.address}`);
 
 
     const MCETHLPToken: TestFaucetToken = await (new TestFaucetToken__factory(signers[0])).deploy(
-        "Uniswap V2",
-        "UNI-V2"
+        "Sushi V2",
+        "SUSHI-V2"
     );
-    
+
     await MCETHLPToken.deployed();
     console.log(`MCETHLPToken deployed to ${MCETHLPToken.address}`);
 
@@ -40,7 +40,7 @@ async function deployTokens() {
     console.log("Deploying escrow pool");
     const EscrowPool: TimeLockNonTransferablePool = await (new TimeLockNonTransferablePool__factory(signers[0]).deploy());
     await EscrowPool.initialize(
-        "Escrowed Merit Circle",
+        "Escrowed Perion",
         "EMC",
         MCToken.address,
         constants.AddressZero,

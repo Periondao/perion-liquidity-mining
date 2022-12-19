@@ -21,8 +21,8 @@ contract TimeLockPool is BasePool, ITimeLockPool {
 
     uint256 public maxBonus;
     uint256 public maxLockDuration;
-    uint256 public constant MIN_LOCK_DURATION = 1 days;
-    
+    uint256 public constant MIN_LOCK_DURATION = 30 days;
+
     uint256[] public curve;
     uint256 public unit;
 
@@ -130,7 +130,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
 
         // burn pool shares
         _burn(_msgSender(), userDeposit.shareAmount);
-        
+
         // return tokens
         depositToken.safeTransfer(_receiver, userDeposit.amount);
         emit Withdrawn(_depositId, _receiver, _msgSender(), userDeposit.amount);
@@ -141,7 +141,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
      * @dev This function extends the duration of a specific lock -deposit- of the sender.
      * While doing so, it uses the timestamp of the current block and calculates the remaining
      * time to the end of the lock, and adds the increased duration. This results in a new
-     * duration that can be different to the original duration from the lock one (>, = or <), 
+     * duration that can be different to the original duration from the lock one (>, = or <),
      * and gets multiplied by the corresponding multiplier. The final result can be more, same,
      * or less shares, which will be minted/burned accordingly.
      * @param _depositId uint256 id of the deposit to be increased.
@@ -159,17 +159,17 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         if (block.timestamp >= userDeposit.end) {
             revert DepositExpiredError();
         }
-        
+
         // Enforce min increase to prevent flash loan or MEV transaction ordering
         uint256 increaseDuration = _increaseDuration.max(MIN_LOCK_DURATION);
-        
+
         // New duration is the time expiration plus the increase
         uint256 duration = maxLockDuration.min(uint256(userDeposit.end - block.timestamp) + increaseDuration);
 
         uint256 mintAmount = userDeposit.amount * getMultiplier(duration) / ONE;
 
         // Multiplier curve changes with time, need to check if the mint amount is bigger, equal or smaller than the already minted
-        
+
         // If the new amount if bigger mint the difference
         if (mintAmount >= userDeposit.shareAmount) {
             depositsOf[_msgSender()][_depositId].shareAmount =  mintAmount;
@@ -225,7 +225,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
      * @notice Gets the multiplier from the curve given a duration.
      * @dev This function calculates a multiplier by fetching the points in the curve given a duration.
      * It can achieve this by linearly interpolating between the points of the curve to get a much more
-     * precise result. The unit parameter is related to the maximum possible duration of the deposits 
+     * precise result. The unit parameter is related to the maximum possible duration of the deposits
      * and the amount of points in the curve.
      * @param _lockDuration uint256 time that the deposit will be locked.
      * @return uint256 number used to multiply and get amount of shares.

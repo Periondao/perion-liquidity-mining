@@ -13,7 +13,7 @@ import {
     TransparentUpgradeableProxy__factory,
     TimeLockNonTransferablePoolV2__factory
 } from "../typechain";
-import { 
+import {
     View,
     TestToken,
     TimeLockPool,
@@ -30,7 +30,7 @@ const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const ESCROW_PORTION = parseEther("0.77");
 const MAX_BONUS = parseEther("10"); // Same as max value in the curve
 const MAX_BONUS_ESCROW = parseEther("1");
-const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 4;
+const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 3;
 const INITIAL_MINT = parseEther("1000000");
 const FLAT_CURVE = [(1e18).toString(), (1e18).toString()];
 const ESCROW_POOL = "0xfeea44bc2161f2fe11d55e557ae4ec855e2d1168";
@@ -46,7 +46,7 @@ function theoreticalMultiplier(
     _duration: any,
     curve: any
 ) {
-    
+
     const unit = Math.floor(MAX_LOCK_DURATION / (curve.length - 1))
     const duration = Math.min(Math.max(Number(_duration), 600), MAX_LOCK_DURATION)
     const n = Math.floor(duration / unit)
@@ -96,7 +96,7 @@ describe("TimeLockPool", function () {
     let escrowPool: TestTimeLockPool;
     let proxyAdmin: ProxyAdmin;
     let proxy: TransparentUpgradeableProxy;
-    
+
     const timeTraveler = new TimeTraveler(hre.network.provider);
 
     before(async() => {
@@ -132,7 +132,7 @@ describe("TimeLockPool", function () {
             ESCROW_DURATION,
             FLAT_CURVE
         );
-        
+
         // Deploy the TimeLockPool implementation
         //const timeLockPoolFactory = new TestTimeLockPool__factory(deployer);
         timeLockPool = await testTimeLockPoolFactory.deploy(
@@ -156,7 +156,7 @@ describe("TimeLockPool", function () {
         escrowPool = escrowPool.connect(account1);
         depositToken = depositToken.connect(account1);
         rewardToken = rewardToken.connect(account1);
-        
+
         await depositToken.approve(timeLockPool.address, constants.MaxUint256);
 
         await timeTraveler.snapshot();
@@ -170,7 +170,7 @@ describe("TimeLockPool", function () {
     describe("deposit", async() => {
 
         const DEPOSIT_AMOUNT = parseEther("10");
-        
+
         it("Depositing with no lock should lock it for 10 minutes to prevent flashloans", async() => {
             await timeLockPool.deposit(DEPOSIT_AMOUNT, 0, account3.address);
             const MIN_LOCK_DURATION = await timeLockPool.MIN_LOCK_DURATION();
@@ -295,7 +295,7 @@ describe("TimeLockPool", function () {
         it("Extending with zero duration should fail", async() => {
             await expect(timeLockPool.extendLock(0, 0)).to.be.revertedWith("ZeroDurationError()");
         });
-        
+
         it("Extending when deposit has already expired should fail", async() => {
             await timeTraveler.increaseTime(MAX_LOCK_DURATION * 2);
             await expect(timeLockPool.extendLock(0, THREE_MONTHS)).to.be.revertedWith("DepositExpiredError()");
@@ -349,7 +349,7 @@ describe("TimeLockPool", function () {
 
             expect(startBalance).to.be.eq(startUserDepostit.shareAmount)
             expect(endBalance).to.be.eq(endUserDepostit.shareAmount)
-            
+
             const latestBlockTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
             // New multiplier comes from the curve by inputing the new duration of the lock
             const sixMonthsMultiplier = await timeLockPool.getMultiplier(startUserDepostit.end.sub(latestBlockTimestamp).add(THREE_MONTHS * 2));
@@ -364,7 +364,7 @@ describe("TimeLockPool", function () {
             const startBalance = await timeLockPool.balanceOf(account1.address);
 
             const nextBlockTimestamp = (startUserDepostit.end.sub(startUserDepostit.start)).div(2).add(startUserDepostit.start).toNumber();
-            
+
             // Fastforward to half of the deposit time elapsed
             await timeTraveler.setNextBlockTimestamp(nextBlockTimestamp);
 
@@ -375,7 +375,7 @@ describe("TimeLockPool", function () {
 
             expect(startBalance).to.be.eq(startUserDepostit.shareAmount)
             expect(endBalance).to.be.eq(endUserDepostit.shareAmount)
-            
+
             const latestBlockTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
             // New multiplier comes from the curve by inputing the new duration of the lock
             const sixMonthsMultiplier = await timeLockPool.getMultiplier(startUserDepostit.end.sub(latestBlockTimestamp).add(THREE_MONTHS * 2));
@@ -397,7 +397,7 @@ describe("TimeLockPool", function () {
         it("Increasing with zero amount should fail", async() => {
             await expect(timeLockPool.increaseLock(0, account1.address, 0)).to.be.revertedWith("ZeroAmountError()");
         });
-        
+
         it("Increasing when deposit has already expired should fail", async() => {
             await timeTraveler.increaseTime(MAX_LOCK_DURATION * 2);
             await expect(timeLockPool.increaseLock(0, account1.address, INCREASE_AMOUNT)).to.be.revertedWith("DepositExpiredError()");
@@ -422,10 +422,10 @@ describe("TimeLockPool", function () {
 
             expect(startBalance).to.be.eq(startUserDepostit.shareAmount)
             expect(endBalance).to.be.eq(endUserDepostit.shareAmount)
-            
+
             // New multiplier comes from time from the timestamp when increased and the end of the lock
             const multiplier = await timeLockPool.getMultiplier(startUserDepostit.end.sub(increaseTimestamp));
-            
+
             // Should increased the deposited amount times the multiplier
             const theoreticalIncrease = INCREASE_AMOUNT.mul(multiplier).div(parseEther("1"));
             expect(theoreticalIncrease.add(startUserDepostit.shareAmount)).to.be.eq(endUserDepostit.shareAmount).to.be.eq(endBalance);
@@ -450,7 +450,7 @@ describe("TimeLockPool", function () {
 
             // New multiplier comes from time from the timestamp when increased and the end of the lock
             const multiplier = await timeLockPool.getMultiplier(startUserDepostit.end.sub(latestBlockTimestamp));
-            
+
             // Should increased the deposited amount times the multiplier
             const theoreticalIncrease = INCREASE_AMOUNT.mul(multiplier).div(parseEther("1"));
             expect(theoreticalIncrease.add(startUserDepostit.shareAmount)).to.be.eq(endUserDepostit.shareAmount).to.be.eq(endBalance);
@@ -492,7 +492,7 @@ describe("TimeLockPool", function () {
             const NEW_CURVE = CURVE.map(function(x) {
                 return (hre.ethers.BigNumber.from(x).mul(2).toString())
             })
-            await expect(timeLockPool.connect(deployer).setCurve(NEW_CURVE))            
+            await expect(timeLockPool.connect(deployer).setCurve(NEW_CURVE))
                 .to.emit(timeLockPool, "CurveChanged")
                 .withArgs(deployer.address);
         })
@@ -547,7 +547,7 @@ describe("TimeLockPool", function () {
                 4.53889275738489,
                 5
             ]
-           
+
             const NEW_CURVE = NEW_RAW_CURVE.map(function(x) {
                 return (x*1e18).toString();
             })
@@ -581,14 +581,14 @@ describe("TimeLockPool", function () {
         });
 
         it("Replacing a point should emit an event", async() => {
-            await expect(timeLockPool.connect(deployer).setCurvePoint((4*1e18).toString(), 3))            
+            await expect(timeLockPool.connect(deployer).setCurvePoint((4*1e18).toString(), 3))
                 .to.emit(timeLockPool, "CurveChanged")
                 .withArgs(deployer.address);
         })
 
         it("Replacing a point should do it correctly", async() => {
             const curvePoint = await timeLockPool.connect(deployer).curve(3);
-            
+
             const newPoint = (4*1e18).toString();
             await timeLockPool.connect(deployer).setCurvePoint(newPoint, 3);
 
@@ -601,7 +601,7 @@ describe("TimeLockPool", function () {
             await expect(timeLockPool.connect(deployer).curve(5)).to.be.reverted;
             const newPoint = (6*1e18).toString();
             await timeLockPool.connect(deployer).setCurvePoint(newPoint, 5);
-            
+
             const addedCurvePoint = await timeLockPool.curve(5);
             expect(addedCurvePoint).to.be.eq(newPoint)
         })
@@ -609,18 +609,18 @@ describe("TimeLockPool", function () {
         it("Removing a point should do it correctly", async() => {
             const newPoint = (4*1e18).toString();
             await timeLockPool.connect(deployer).setCurvePoint(newPoint, 6);
-            
+
             await expect(timeLockPool.curve(4)).to.be.reverted;
         })
 
         it("Removing a point from a curve with length two should revert", async() => {
-            
+
             const NEW_CURVE = [(1e18).toString(), (2*1e18).toString()]
             await timeLockPool.connect(deployer).setCurve(NEW_CURVE);
 
             const newPoint = (4*1e18).toString();
             // A curve cannot have less than two elements, thus it must fail
-            await expect(timeLockPool.connect(deployer).setCurvePoint(newPoint, 9)).to.be.revertedWith("ShortCurveError()");            
+            await expect(timeLockPool.connect(deployer).setCurvePoint(newPoint, 9)).to.be.revertedWith("ShortCurveError()");
         })
 
         it("Adding a point so that curve is not monotonic increasing should fail", async() => {
@@ -628,7 +628,7 @@ describe("TimeLockPool", function () {
             const newPoint = (4*1e18).toString();
             await expect(timeLockPool.connect(deployer).setCurvePoint(newPoint, 5)).to.be.revertedWith("CurveIncreaseError");
         })
-    });    
+    });
 
     describe("Curve changes", async() => {
         beforeEach(async() => {
@@ -781,15 +781,15 @@ describe("TimeLockPool", function () {
             const minMultiplier = await timeLockPool.getMultiplier(MIN_LOCK_DURATION);
             const expectedResult1 = theoreticalMultiplier(MIN_LOCK_DURATION, NEW_CURVE)
 
-            const oneYearDuration = MAX_LOCK_DURATION / 4;
+            const oneYearDuration = MAX_LOCK_DURATION / 3;
             const oneYearMultiplier = await timeLockPool.getMultiplier(oneYearDuration);
             const expectedResult2 = theoreticalMultiplier(oneYearDuration, NEW_CURVE)
 
-            const twoYearDuration = MAX_LOCK_DURATION / 2;
+            const twoYearDuration = oneYearDuration * 2;
             const twoYearMultiplier = await timeLockPool.getMultiplier(twoYearDuration);
             const expectedResult3 = theoreticalMultiplier(twoYearDuration, NEW_CURVE)
 
-            const threeYearDuration = MAX_LOCK_DURATION * 3 / 4;
+            const threeYearDuration = MAX_LOCK_DURATION;
             const threeYearMultiplier = await timeLockPool.getMultiplier(threeYearDuration);
             const expectedResult4 = theoreticalMultiplier(threeYearDuration, NEW_CURVE)
 
@@ -812,7 +812,7 @@ describe("TimeLockPool", function () {
 
     describe("Curve changes: withdawing/increasing/extending", async() => {
         const DEPOSIT_AMOUNT = parseEther("176.378");
-        const LOCK_DURATION = MAX_LOCK_DURATION / 4;
+        const LOCK_DURATION = MAX_LOCK_DURATION / 3;
         const THREE_MONTHS = MAX_LOCK_DURATION / 12;
 
         beforeEach(async() => {
@@ -860,7 +860,7 @@ describe("TimeLockPool", function () {
 
             expect(startBalance).to.be.eq(startUserDepostit.shareAmount)
             expect(endBalance).to.be.eq(endUserDepostit.shareAmount)
-            
+
             const latestBlockTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
             const sixMonthsMultiplier = await timeLockPool.getMultiplier(startUserDepostit.end.sub(latestBlockTimestamp).add(THREE_MONTHS * 2));
             const theoreticalEndShareAmount = DEPOSIT_AMOUNT.mul(sixMonthsMultiplier).div(parseEther("1"));
@@ -876,7 +876,7 @@ describe("TimeLockPool", function () {
                 return (hre.ethers.BigNumber.from(x).div(10).toString())
             })
             await timeLockPool.connect(deployer).setCurve(NEW_CURVE);
-            
+
             const startUserDepostit = await timeLockPool.depositsOf(account1.address, 0);
             const startBalance = await timeLockPool.balanceOf(account1.address);
 
@@ -944,11 +944,11 @@ describe("TimeLockPool", function () {
             const blockTimestamp1 = (await hre.ethers.provider.getBlock("latest")).timestamp;
             const deposit = await timeLockPool.getDepositsOf(account1.address);
             expect(startingDepositBalance).to.be.eq(DEPOSIT_AMOUNT.mul(multiplier).div(constants.WeiPerEther));
-            
+
             expect(deposit[0].amount).to.eq(DEPOSIT_AMOUNT);
             expect(deposit[0].start).to.eq(blockTimestamp1);
             expect(deposit[0].end).to.eq(BigNumber.from(blockTimestamp1).add(MAX_LOCK_DURATION));
-            
+
             await timeTraveler.increaseTime(MAX_LOCK_DURATION);
 
             const calldatas: any[] = [];
@@ -1045,7 +1045,7 @@ describe("TimeLockPool", function () {
             calldatas.push(
                 (await timeLockPool.populateTransaction.setCurvePoint(newPoint3, 6)).data
             );
-            
+
             await expect(timeLockPool.curve(5)).to.be.reverted;
             await timeLockPool.connect(deployer).batch(calldatas, true);
 
@@ -1069,7 +1069,7 @@ describe("TimeLockPool", function () {
             const newPoint1 = (4*1e18).toString();
             const newPoint2 = (20*1e18).toString();
             const newPoint3 = (15*1e18).toString();
-            
+
             calldatas.push(
                 (await timeLockPool.populateTransaction.setCurvePoint(newPoint1, 6)).data
             );
@@ -1098,7 +1098,7 @@ describe("TimeLockPool", function () {
             const newPoint1 = (4*1e18).toString();
             const newPoint2 = (20*1e18).toString();
             const newPoint3 = (15*1e18).toString();
-            
+
             calldatas.push(
                 (await timeLockPool.populateTransaction.setCurvePoint(newPoint1, 6)).data
             );
