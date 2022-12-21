@@ -30,9 +30,9 @@ const chainIds = {
 };
 
 // Ensure that we have all the environment variables we need.
-const mnemonic: string | undefined = process.env.MNEMONIC;
-if (!mnemonic) {
-  throw new Error("Please set your MNEMONIC in a .env file");
+const privateKey: string | undefined = process.env.PRIVATE_KEY_DEPLOYER;
+if (!privateKey) {
+  throw new Error("Please set your PRIVATE_KEY_DEPLOYER in a .env file");
 }
 
 const infuraApiKey: string | undefined = process.env.INFURA_API_KEY;
@@ -43,11 +43,7 @@ if (!infuraApiKey) {
 function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
   const url: string = "https://" + network + ".infura.io/v3/" + infuraApiKey;
   return {
-    accounts: {
-      count: 10,
-      mnemonic,
-      path: "m/44'/60'/0'/0",
-    },
+    accounts: process.env.PRIVATE_KEY_DEPLOYER != undefined ? [process.env.PRIVATE_KEY_DEPLOYER] : [],
     chainId: chainIds[network],
     url,
   };
@@ -64,7 +60,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       accounts: {
-        mnemonic,
+        mnemonic: privateKey,
       },
       chainId: chainIds.hardhat,
     },
