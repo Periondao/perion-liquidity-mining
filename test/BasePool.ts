@@ -3,7 +3,7 @@ import { formatEther, parseEther } from "@ethersproject/units";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import hre from "hardhat";
-import {    
+import {
     TestBasePool,
     TestBasePool__factory,
     TestToken,
@@ -22,7 +22,7 @@ const ESCROW_PORTION = parseEther("0.6");
 const ESCROW_DURATION = 60 * 60 * 24 * 365; // 1 year
 const MAX_BONUS_ESCROW = parseEther("1");
 const FLAT_CURVE = [(1e18).toString(), (1e18).toString()];
-
+const END_DATE = 9999999999;
 const INITIAL_MINT = parseEther("1000000000");
 
 describe("BasePool", function () {
@@ -75,10 +75,11 @@ describe("BasePool", function () {
             0,
             MAX_BONUS_ESCROW,
             ESCROW_DURATION,
+            END_DATE,
             FLAT_CURVE
         );
 
-        const testBasePoolFactory = new TestBasePool__factory(deployer);    
+        const testBasePoolFactory = new TestBasePool__factory(deployer);
         basePool = await testBasePoolFactory.deploy(
             TOKEN_NAME,
             TOKEN_SYMBOL,
@@ -99,7 +100,7 @@ describe("BasePool", function () {
     });
 
     beforeEach(async() => {
-       await timeTraveler.revertSnapshot(); 
+       await timeTraveler.revertSnapshot();
     });
 
     describe("distributeRewards", async() => {
@@ -157,7 +158,7 @@ describe("BasePool", function () {
         it("First claim single holder", async() => {
             await basePool.mint(account1.address, BASE_POOL_MINT_AMOUNT);
             await basePool.distributeRewards(DISTRIBUTION_AMOUNT1);
-            
+
             const account1RewardTokenBalanceBefore = await rewardToken.balanceOf(account1.address);
             const account2RewardTokenBalanceBefore = await rewardToken.balanceOf(account2.address);
             await basePool.claimRewards(account2.address);
@@ -191,7 +192,7 @@ describe("BasePool", function () {
             const account1WithdrawnRewardsAfter = await basePool.withdrawnRewardsOf(account1.address);
             const account2WithdrawableRewardsAfter = await basePool.withdrawableRewardsOf(account2.address);
             const account2WithdrawnRewardsAfter = await basePool.withdrawnRewardsOf(account2.address);
-            
+
             const rewardPerAccount = DISTRIBUTION_AMOUNT1.div("2");
             const expectedEscrowed = rewardPerAccount.mul(ESCROW_PORTION).div(constants.WeiPerEther); // subtract 1
 
@@ -223,7 +224,7 @@ describe("BasePool", function () {
             const account2WithdrawnRewards = await basePool.withdrawnRewardsOf(account2.address);
             const account1WithdrawableRewards = await basePool.withdrawableRewardsOf(account1.address);
             const account2WithdrawableRewards = await basePool.withdrawableRewardsOf(account2.address);
-            
+
             const account3EscrowedRewards = await escrowPool.getTotalDeposit(account3.address);
             const account4EscrowedRewards = await escrowPool.getTotalDeposit(account4.address);
             const account3RewardBalance = await rewardToken.balanceOf(account3.address);
@@ -252,7 +253,7 @@ describe("BasePool", function () {
 
             const DISTRIBUTION_AMOUNT = parseEther("1");
             const MINT_AMOUNT = parseEther("10");
-            
+
             const tempBasePool = (await testBasePoolFactory.deploy(
                 TOKEN_NAME,
                 TOKEN_SYMBOL,
@@ -268,7 +269,7 @@ describe("BasePool", function () {
             await tempBasePool.mint(account1.address, MINT_AMOUNT);
             await tempBasePool.distributeRewards(DISTRIBUTION_AMOUNT);
             await tempBasePool.claimRewards(account3.address);
-            
+
             const account3RewardTokenBalance = await rewardToken.balanceOf(account3.address);
             const account3EscrowedRewards = await escrowPool.getTotalDeposit(account3.address);
 
@@ -281,7 +282,7 @@ describe("BasePool", function () {
 
             const DISTRIBUTION_AMOUNT = parseEther("1");
             const MINT_AMOUNT = parseEther("10");
-            
+
             const tempBasePool = (await testBasePoolFactory.deploy(
                 TOKEN_NAME,
                 TOKEN_SYMBOL,
@@ -297,7 +298,7 @@ describe("BasePool", function () {
             await tempBasePool.mint(account1.address, MINT_AMOUNT);
             await tempBasePool.distributeRewards(DISTRIBUTION_AMOUNT);
             await tempBasePool.claimRewards(account3.address);
-            
+
             const account3RewardTokenBalance = await rewardToken.balanceOf(account3.address);
             const account3EscrowedRewards = await escrowPool.getTotalDeposit(account3.address);
 
