@@ -10,7 +10,7 @@ import { ethers } from "hardhat";
 
 const MAX_BONUS_ESCROW = parseEther("0");
 
-const ESCROW_DURATION = 60 * 60 * 24 * 365;
+const ESCROW_DURATION = 0;
 
 const FLAT_CURVE = [0, 0];
 
