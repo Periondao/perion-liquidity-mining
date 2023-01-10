@@ -16,14 +16,12 @@ contract TimeLockPool is BasePool, ITimeLockPool {
     error NonExistingDepositError();
     error TooSoonError();
     error MaxBonusError();
-    error CurveIncreaseError();
     error ShareBurningError();
 
     uint256 public maxBonus;
     uint256 public maxLockDuration;
     uint256 public constant MIN_LOCK_DURATION = 30 days;
 
-    uint256[] public curve;
     uint256 public unit;
     uint256 public endDate;
 
@@ -45,19 +43,11 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         uint256 _escrowDuration,
         uint256 _maxBonus,
         uint256 _maxLockDuration,
-        uint256 _endDate,
-        uint256[] memory _curve
+        uint256 _endDate
     ) internal onlyInitializing {
         __BasePool_init(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration);
         if (_maxLockDuration < MIN_LOCK_DURATION) {
             revert SmallMaxLockDuration();
-        }
-        checkCurve(_curve);
-        for (uint i=0; i < _curve.length; i++) {
-            if (_curve[i] > _maxBonus) {
-                revert MaxBonusError();
-            }
-            curve.push(_curve[i]);
         }
         maxBonus = _maxBonus;
         if(block.timestamp > _endDate) {
@@ -65,7 +55,6 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         }
         endDate = _endDate;
         maxLockDuration = _maxLockDuration;
-        unit = _maxLockDuration / (curve.length - 1);
     }
 
     error DepositExpiredError();
@@ -73,13 +62,11 @@ contract TimeLockPool is BasePool, ITimeLockPool {
     error ZeroDurationError();
     error ZeroAddressError();
     error ZeroAmountError();
-    error ShortCurveError();
 
     event Deposited(uint256 amount, uint256 duration, address indexed receiver, address indexed from);
     event Withdrawn(uint256 indexed depositId, address indexed receiver, address indexed from, uint256 amount);
     event LockExtended(uint256 indexed depositId, uint256 duration, address indexed from);
     event LockIncreased(uint256 indexed depositId, address indexed receiver, address indexed from, uint256 amount);
-    event CurveChanged(address indexed sender);
 
     /**
      * @notice Creates a lock with an amount of tokens and mint the corresponding shares.
@@ -181,8 +168,6 @@ contract TimeLockPool is BasePool, ITimeLockPool {
 
         uint256 mintAmount = userDeposit.amount * getMultiplier(duration) / ONE;
 
-        // Multiplier curve changes with time, need to check if the mint amount is bigger, equal or smaller than the already minted
-
         // If the new amount if bigger mint the difference
         if (mintAmount >= userDeposit.shareAmount) {
             depositsOf[_msgSender()][_depositId].shareAmount =  mintAmount;
@@ -234,27 +219,8 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         emit LockIncreased(_depositId, _receiver, _msgSender(), _increaseAmount);
     }
 
-    /**
-     * @notice Gets the multiplier from the curve given a duration.
-     * @dev This function calculates a multiplier by fetching the points in the curve given a duration.
-     * It can achieve this by linearly interpolating between the points of the curve to get a much more
-     * precise result. The unit parameter is related to the maximum possible duration of the deposits
-     * and the amount of points in the curve.
-     * @param _lockDuration uint256 time that the deposit will be locked.
-     * @return uint256 number used to multiply and get amount of shares.
-     */
     function getMultiplier(uint256 _lockDuration) public view returns(uint256) {
-        // There is no need to check _lockDuration amount, it is always checked before
-        // in the functions that call this function
-
-        // n is the time unit where the lockDuration stands
-        uint n = _lockDuration / unit;
-        // if last point no need to interpolate
-        if (n == curve.length - 1) {
-            return ONE + curve[n];
-        }
-        // linear interpolation between points
-        return ONE + curve[n] + (_lockDuration - n * unit) * (curve[n + 1] - curve[n]) / unit;
+        return 1e18 + (maxBonus * _lockDuration / maxLockDuration);
     }
 
     function getTotalDeposit(address _account) public view returns(uint256) {
@@ -279,84 +245,6 @@ contract TimeLockPool is BasePool, ITimeLockPool {
             revert MaxBonusError();
         } else {
             return _point;
-        }
-    }
-
-    /**
-     * @notice Can set an entire new curve.
-     * @dev This function can change current curve by a completely new one. By doing so, it does not
-     * matter if the new curve's length is larger, equal, or shorter because the function manages
-     * all of those cases.
-     * @param _curve uint256 array of the points that compose the curve.
-     */
-    function setCurve(uint256[] calldata _curve) external onlyGov {
-        // same length curves
-        if (curve.length == _curve.length) {
-            for (uint i=0; i < curve.length; i++) {
-                curve[i] = maxBonusError(_curve[i]);
-            }
-        // replacing with a shorter curve
-        } else if (curve.length > _curve.length) {
-            for (uint i=0; i < _curve.length; i++) {
-                curve[i] = maxBonusError(_curve[i]);
-            }
-            uint initialLength = curve.length;
-            for (uint j=0; j < initialLength - _curve.length; j++) {
-                curve.pop();
-            }
-            unit = maxLockDuration / (curve.length - 1);
-        // replacing with a longer curve
-        } else {
-            for (uint i=0; i < curve.length; i++) {
-                curve[i] = maxBonusError(_curve[i]);
-            }
-            uint initialLength = curve.length;
-            for (uint j=0; j < _curve.length - initialLength; j++) {
-                curve.push(maxBonusError(_curve[initialLength + j]));
-            }
-            unit = maxLockDuration / (curve.length - 1);
-        }
-        checkCurve(curve);
-        emit CurveChanged(_msgSender());
-    }
-
-    /**
-     * @notice Can set a point of the curve.
-     * @dev This function can replace any point in the curve by inputing the existing index,
-     * add a point to the curve by using the index that equals the amount of points of the curve,
-     * and remove the last point of the curve if an index greater than the length is used. The first
-     * point of the curve index is zero.
-     * @param _newPoint uint256 point to be set.
-     * @param _position uint256 position of the array to be set (zero-based indexing convention).
-     */
-    function setCurvePoint(uint256 _newPoint, uint256 _position) external onlyGov {
-        if (_newPoint > maxBonus) {
-            revert MaxBonusError();
-        }
-        if (_position < curve.length) {
-            curve[_position] = _newPoint;
-        } else if (_position == curve.length) {
-            curve.push(_newPoint);
-            unit = maxLockDuration / (curve.length - 1);
-        } else {
-            if (curve.length - 1 < 2) {
-                revert ShortCurveError();
-            }
-            curve.pop();
-            unit = maxLockDuration / (curve.length - 1);
-        }
-        checkCurve(curve);
-        emit CurveChanged(_msgSender());
-    }
-
-    function checkCurve(uint256[] memory _curve) internal {
-        if (_curve.length < 2) {
-            revert ShortCurveError();
-        }
-        for (uint256 i; i < _curve.length - 1; ++i) {
-            if (_curve[i + 1] < _curve[i]) {
-                revert CurveIncreaseError();
-            }
         }
     }
 

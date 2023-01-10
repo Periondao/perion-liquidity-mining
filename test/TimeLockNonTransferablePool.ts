@@ -27,14 +27,6 @@ const INITIAL_MINT = parseEther("1000000");
 const DEPOSIT_AMOUNT = parseEther("1000");
 const MAX_BONUS_ESCROW = parseEther("1");
 const END_DATE = 9999999999;
-const FLAT_CURVE = [parseEther("1"), parseEther("1")];
-const CURVE = [
-    (0*1e18).toString(),
-    (0.65*1e18).toString(),
-    (1.5*1e18).toString(),
-    (3*1e18).toString(),
-    (5*1e18).toString()
-]
 
 describe("TimeLockNonTransferablePool", function () {
 
@@ -89,7 +81,6 @@ describe("TimeLockNonTransferablePool", function () {
             MAX_BONUS_ESCROW,
             ESCROW_DURATION,
             END_DATE,
-            FLAT_CURVE
         );
 
         // Deploy the TimeLockPool implementation
@@ -107,7 +98,6 @@ describe("TimeLockNonTransferablePool", function () {
             MAX_BONUS,
             MAX_LOCK_DURATION,
             END_DATE,
-            CURVE
         ]
 
         const timeLockNonTransferablePoolInterface = new hre.ethers.utils.Interface(JSON.stringify(TimeLockNonTransferablePoolJSON.abi))
