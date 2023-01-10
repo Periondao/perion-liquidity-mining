@@ -26,6 +26,7 @@ const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 4;
 const INITIAL_MINT = parseEther("1000000");
 const DEPOSIT_AMOUNT = parseEther("1000");
 const MAX_BONUS_ESCROW = parseEther("1");
+const END_DATE = 9999999999;
 const FLAT_CURVE = [parseEther("1"), parseEther("1")];
 const CURVE = [
     (0*1e18).toString(),
@@ -63,7 +64,6 @@ describe("TimeLockNonTransferablePool", function () {
             account4,
             ...signers
         ] = await hre.ethers.getSigners();
-
         const testTokenFactory = await new TestToken__factory(deployer);
 
         depositToken = await testTokenFactory.deploy("DPST", "Deposit Token");
@@ -75,9 +75,9 @@ describe("TimeLockNonTransferablePool", function () {
         // Deploy ProxyAdmin
         const ProxyAdmin = new ProxyAdmin__factory(deployer);
         proxyAdmin = await ProxyAdmin.deploy();
-        
+
         const testTimeLockPoolFactory = new TestTimeLockPool__factory(deployer);
-        
+
         escrowPool = await testTimeLockPoolFactory.deploy(
             "ESCROW",
             "ESCRW",
@@ -88,9 +88,10 @@ describe("TimeLockNonTransferablePool", function () {
             0,
             MAX_BONUS_ESCROW,
             ESCROW_DURATION,
+            END_DATE,
             FLAT_CURVE
         );
-        
+
         // Deploy the TimeLockPool implementation
         const timeLockNonTransferablePoolFactory = new TimeLockNonTransferablePool__factory(deployer);
         timeLockNonTransferablePoolImplementation = await timeLockNonTransferablePoolFactory.deploy();
@@ -105,6 +106,7 @@ describe("TimeLockNonTransferablePool", function () {
             ESCROW_DURATION,
             MAX_BONUS,
             MAX_LOCK_DURATION,
+            END_DATE,
             CURVE
         ]
 
@@ -115,7 +117,7 @@ describe("TimeLockNonTransferablePool", function () {
         // Deploy the proxy linking it to the timeLockPoolImplementation and proxyAdmin
         const Proxy = new TransparentUpgradeableProxy__factory(deployer);
         proxy = await Proxy.deploy(timeLockNonTransferablePoolImplementation.address, proxyAdmin.address, encoded_data);
-        
+
         // Create an interface of the implementation on the proxy so we can send the methods of the implementation
         timeLockPool = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolJSON.abi), deployer);
 
@@ -124,7 +126,7 @@ describe("TimeLockNonTransferablePool", function () {
         escrowPool = escrowPool.connect(account1);
         depositToken = depositToken.connect(account1);
         rewardToken = rewardToken.connect(account1);
-        
+
         await depositToken.approve(timeLockPool.address, constants.MaxUint256);
         await timeLockPool.deposit(DEPOSIT_AMOUNT, constants.MaxUint256, account1.address);
 

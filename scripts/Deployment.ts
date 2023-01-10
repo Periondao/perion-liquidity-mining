@@ -37,7 +37,10 @@ const ESCROW_PORTION = parseEther("0");
 const MAX_BONUS = parseEther("5");
 
 // Maximum duration that a lock can have
-const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 4;
+const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 3;
+
+// end date of the staking program
+const END_DATE = 1768993200;
 
 // Curve used for the non escrow pools
 const CURVE = [
@@ -154,6 +157,7 @@ async function deployUpgradeable() {
         ESCROW_DURATION,
         MAX_BONUS,
         MAX_LOCK_DURATION,
+        END_DATE,
         CURVE
     ]
 
@@ -215,6 +219,7 @@ async function deployUpgradeable() {
         ESCROW_DURATION,
         MAX_BONUS,
         MAX_LOCK_DURATION,
+        END_DATE,
         CURVE
     ]
 

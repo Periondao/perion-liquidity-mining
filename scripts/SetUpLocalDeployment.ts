@@ -10,8 +10,8 @@ import { ethers } from "hardhat";
 
 const MAX_BONUS_ESCROW = parseEther("0");
 
+const END_DATE = 1768993200;
 const ESCROW_DURATION = 0;
-
 const FLAT_CURVE = [0, 0];
 
 async function deployTokens() {
@@ -49,6 +49,7 @@ async function deployTokens() {
         0,
         MAX_BONUS_ESCROW,
         ESCROW_DURATION,
+        END_DATE,
         FLAT_CURVE
     )
     console.log(`Escrow pool deployed to ${EscrowPool.address}`,'\n');

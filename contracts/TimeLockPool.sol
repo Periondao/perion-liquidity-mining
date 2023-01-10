@@ -25,6 +25,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
 
     uint256[] public curve;
     uint256 public unit;
+    uint256 public endDate;
 
     mapping(address => Deposit[]) public depositsOf;
 
@@ -44,6 +45,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         uint256 _escrowDuration,
         uint256 _maxBonus,
         uint256 _maxLockDuration,
+        uint256 _endDate,
         uint256[] memory _curve
     ) internal onlyInitializing {
         __BasePool_init(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration);
@@ -58,11 +60,16 @@ contract TimeLockPool is BasePool, ITimeLockPool {
             curve.push(_curve[i]);
         }
         maxBonus = _maxBonus;
+        if(block.timestamp > _endDate) {
+            revert ProgramExpiredError();
+        }
+        endDate = _endDate;
         maxLockDuration = _maxLockDuration;
         unit = _maxLockDuration / (curve.length - 1);
     }
 
     error DepositExpiredError();
+    error ProgramExpiredError();
     error ZeroDurationError();
     error ZeroAddressError();
     error ZeroAmountError();
@@ -83,6 +90,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
      * @param _receiver address owner of the lock
      */
     function deposit(uint256 _amount, uint256 _duration, address _receiver) external override {
+        if(block.timestamp + MIN_LOCK_DURATION > endDate) revert ProgramExpiredError();
         if (_amount == 0) {
             revert ZeroAmountError();
         }
@@ -90,6 +98,11 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         uint256 duration = _duration.min(maxLockDuration);
         // Enforce min lockup duration to prevent flash loan or MEV transaction ordering
         duration = duration.max(MIN_LOCK_DURATION);
+        if(duration + block.timestamp > endDate) {
+            // only allow the user to deposit up to the endDate
+            uint difference = (duration + block.timestamp) - endDate;
+            duration -= difference;
+        }
 
         uint256 mintAmount = _amount * getMultiplier(duration) / ONE;
 

@@ -31,6 +31,7 @@ const ESCROW_PORTION = parseEther("0.77");
 const MAX_BONUS = parseEther("10"); // Same as max value in the curve
 const MAX_BONUS_ESCROW = parseEther("1");
 const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 3;
+const END_DATE = 9999999999;
 const INITIAL_MINT = parseEther("1000000");
 const FLAT_CURVE = [(1e18).toString(), (1e18).toString()];
 const ESCROW_POOL = "0xfeea44bc2161f2fe11d55e557ae4ec855e2d1168";
@@ -130,6 +131,7 @@ describe("TimeLockPool", function () {
             0,
             MAX_BONUS_ESCROW,
             ESCROW_DURATION,
+            END_DATE,
             FLAT_CURVE
         );
 
@@ -145,6 +147,7 @@ describe("TimeLockPool", function () {
             ESCROW_DURATION * 2,
             MAX_BONUS.mul(10),
             MAX_LOCK_DURATION,
+            END_DATE,
             CURVE
         );
 
@@ -177,6 +180,20 @@ describe("TimeLockPool", function () {
             const deposit = await timeLockPool.depositsOf(account3.address, 0);
             const duration = await deposit.end.sub(deposit.start);
             expect(duration).to.eq(MIN_LOCK_DURATION);
+        });
+
+        it("should not allow users to deposit past the end date", async() => {
+          await timeTraveler.setNextBlockTimestamp(END_DATE);
+          const tx = timeLockPool.deposit(DEPOSIT_AMOUNT, 0, account3.address);
+          await expect(tx).to.be.revertedWith("ProgramExpiredError()");
+        });
+
+        it("should not allow the deposit duration to exceed the end date", async() => {
+          const MIN_LOCK_DURATION = await timeLockPool.MIN_LOCK_DURATION();
+          await timeTraveler.setNextBlockTimestamp(END_DATE - MIN_LOCK_DURATION * 3);
+          await timeLockPool.deposit(DEPOSIT_AMOUNT, MIN_LOCK_DURATION * 4, account3.address);
+          const deposit = await timeLockPool.depositsOf(account3.address, 0);
+          expect(deposit.end).to.equal(END_DATE);
         });
 
         it("Deposit with no lock", async() => {

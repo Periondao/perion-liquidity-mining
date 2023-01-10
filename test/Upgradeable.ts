@@ -33,6 +33,7 @@ const ESCROW_PORTION = parseEther("0.77");
 const MAX_BONUS = parseEther("10"); // Same as max value in the curve
 const MAX_BONUS_ESCROW = parseEther("1");
 const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 4;
+const END_DATE = 9999999999;
 const INITIAL_MINT = parseEther("1000000");
 const FLAT_CURVE = [(1e18).toString(), (1e18).toString()];
 const CURVE = [
@@ -47,7 +48,7 @@ function theoreticalMultiplier(
     _duration: any,
     curve: any
 ) {
-    
+
     const unit = Math.floor(MAX_LOCK_DURATION / (curve.length - 1))
     const duration = Math.min(Math.max(Number(_duration), 600), MAX_LOCK_DURATION)
     const n = Math.floor(duration / unit)
@@ -90,7 +91,7 @@ describe("TimeLockPool", function () {
     let account3: SignerWithAddress;
     let signers: SignerWithAddress[];
 
-    
+
     let depositToken: TestToken;
     let rewardToken: TestToken;
     let timeLockNonTransferablePool: Contract;
@@ -98,7 +99,7 @@ describe("TimeLockPool", function () {
     let escrowPool: TestTimeLockPool;
     let proxyAdmin: ProxyAdmin;
     let proxy: TransparentUpgradeableProxy;
-    
+
     const timeTraveler = new TimeTraveler(hre.network.provider);
 
     before(async() => {
@@ -135,6 +136,7 @@ describe("TimeLockPool", function () {
             0,
             MAX_BONUS_ESCROW,
             ESCROW_DURATION,
+            END_DATE,
             FLAT_CURVE
         );
 
@@ -152,6 +154,7 @@ describe("TimeLockPool", function () {
             ESCROW_DURATION * 2,
             MAX_BONUS.mul(10),
             MAX_LOCK_DURATION,
+            END_DATE,
             CURVE
         ]
 
@@ -162,7 +165,7 @@ describe("TimeLockPool", function () {
         // Deploy the proxy linking it to the timeLockNonTransferablePoolImplementation and proxyAdmin
         const Proxy = new TransparentUpgradeableProxy__factory(deployer);
         proxy = await Proxy.deploy(timeLockNonTransferablePoolImplementation.address, proxyAdmin.address, encoded_data);
-        
+
         // Create an interface of the implementation on the proxy so we can send the methods of the implementation
         timeLockNonTransferablePool = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolJSON.abi), deployer);
 
@@ -176,7 +179,7 @@ describe("TimeLockPool", function () {
         escrowPool = escrowPool.connect(account1);
         depositToken = depositToken.connect(account1);
         rewardToken = rewardToken.connect(account1);
-        
+
         await depositToken.approve(timeLockNonTransferablePool.address, constants.MaxUint256);
 
         await timeTraveler.snapshot();
@@ -221,7 +224,7 @@ describe("TimeLockPool", function () {
 
                 let timeLockNonTransferablePoolV2: Contract;
                 timeLockNonTransferablePoolV2 = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi), deployer);
-                
+
                 // TimeLockPoolV2 has testingUpgrade function that returns 7357 ("TEST").
                 const testingUpgrade = await timeLockNonTransferablePoolV2.testingUpgrade();
                 expect(7357).to.be.eq(testingUpgrade.toNumber())
@@ -229,11 +232,11 @@ describe("TimeLockPool", function () {
 
             it("Should preserve the deposits in the same slot after upgrade", async() => {
                 const DEPOSIT_AMOUNT = parseEther("10");
-    
+
                 // Deposit
                 await timeLockNonTransferablePool.deposit(DEPOSIT_AMOUNT, constants.MaxUint256, account3.address);
                 await timeLockNonTransferablePool.deposit(DEPOSIT_AMOUNT, constants.MaxUint256, account3.address);
-                
+
                 // Get deposits before upgrade
                 const depositTokenBalanceBefore = await depositToken.balanceOf(account1.address);
                 const depositsBefore = await timeLockNonTransferablePool.getDepositsOf(account3.address);
@@ -249,18 +252,18 @@ describe("TimeLockPool", function () {
                 const timeLockNonTransferablePoolFactoryV2 = new TimeLockNonTransferablePoolV2__factory(deployer);
                 let timeLockNonTransferablePoolImplementationV2: TimeLockNonTransferablePoolV2;
                 timeLockNonTransferablePoolImplementationV2 = await timeLockNonTransferablePoolFactoryV2.deploy();
-    
+
                 await proxyAdmin.connect(governance).upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
-    
+
                 let timeLockNonTransferablePoolV2: Contract;
                 timeLockNonTransferablePoolV2 = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi), deployer);
-    
+
                 // Get deposits after upgrade
                 const depositTokenBalanceAfter = await depositToken.balanceOf(account1.address);
                 const depositsAfter = await timeLockNonTransferablePoolV2.getDepositsOf(account3.address);
                 const totalDepositAfter = await timeLockNonTransferablePoolV2.getTotalDeposit(account3.address);
                 const timeLockNonTransferablePoolBalanceAfter = await timeLockNonTransferablePoolV2.balanceOf(account3.address);
-    
+
                 expect(depositTokenBalanceAfter).to.be.eq(depositTokenBalanceBefore);
                 expect(depositsAfter[0].amount).to.be.eq(depositsBefore[0].amount);
                 expect(depositsAfter[1].amount).to.be.eq(depositsBefore[1].amount);
@@ -276,7 +279,7 @@ describe("TimeLockPool", function () {
                     expect(slot[i]).to.be.eq(slotV2);
                 }
             });
-    
+
             it("Should preserve storage when extending", async() => {
                 const DEPOSIT_AMOUNT = parseEther("10");
                 await timeLockNonTransferablePool.deposit(DEPOSIT_AMOUNT, MAX_LOCK_DURATION / 12, account1.address);
@@ -285,7 +288,7 @@ describe("TimeLockPool", function () {
                 // Fastforward to half of the deposit time elapsed
                 await timeTraveler.setNextBlockTimestamp(nextBlockTimestamp);
                 await timeLockNonTransferablePool.extendLock(0, MAX_LOCK_DURATION / 12)
-    
+
                 let slot: string[] = new Array;
                 for(let i = 0; i < 1000; i++) {
                     slot.push(await hre.ethers.provider.getStorageAt(timeLockNonTransferablePool.address, i))
@@ -298,13 +301,13 @@ describe("TimeLockPool", function () {
                 await proxyAdmin.connect(governance).upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
                 let timeLockNonTransferablePoolV2: Contract;
                 timeLockNonTransferablePoolV2 = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi), deployer);
-    
+
                 for(let i = 0; i < 1000; i++) {
                     const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
                     expect(slot[i]).to.be.eq(slotV2);
                 }
             });
-    
+
             it("Should preserve storage when changing curve", async() => {
                 const NEW_RAW_CURVE = [
                     0,
@@ -334,7 +337,7 @@ describe("TimeLockPool", function () {
                     return (x*1e18).toString();
                 })
                 await timeLockNonTransferablePool.connect(governance).setCurve(NEW_CURVE);
-                
+
                 let slot: string[] = new Array;
                 for(let i = 0; i < 1000; i++) {
                     slot.push(await hre.ethers.provider.getStorageAt(timeLockNonTransferablePool.address, i))
@@ -347,7 +350,7 @@ describe("TimeLockPool", function () {
                 await proxyAdmin.connect(governance).upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
                 let timeLockNonTransferablePoolV2: Contract;
                 timeLockNonTransferablePoolV2 = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi), deployer);
-                
+
                 for(let i = 0; i < 1000; i++) {
                     const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
                     expect(slot[i]).to.be.eq(slotV2);
@@ -367,7 +370,7 @@ describe("TimeLockPool", function () {
                 // Fastforward to half of the deposit time elapsed
                 await timeTraveler.setNextBlockTimestamp(nextBlockTimestamp);
                 await timeLockNonTransferablePool.extendLock(0, MAX_LOCK_DURATION / 12)
-    
+
                 // Upgrade
                 const timeLockNonTransferablePoolFactoryV2 = new TimeLockNonTransferablePoolV2__factory(deployer);
                 let timeLockNonTransferablePoolImplementationV2: TimeLockNonTransferablePoolV2;
@@ -375,7 +378,7 @@ describe("TimeLockPool", function () {
                 await proxyAdmin.connect(governance).upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
                 let timeLockNonTransferablePoolV2: Contract;
                 timeLockNonTransferablePoolV2 = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi), deployer);
-    
+
                 let differences = 0;
                 for(let i = 0; i < 2000; i++) {
                     const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
@@ -389,11 +392,11 @@ describe("TimeLockPool", function () {
         });
     });
 
-    
-   
 
 
-    
-    
+
+
+
+
 
 });
