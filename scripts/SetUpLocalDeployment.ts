@@ -10,8 +10,8 @@ import { ethers } from "hardhat";
 
 const MAX_BONUS_ESCROW = parseEther("0");
 
-const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const END_DATE = 1768993200;
+const ESCROW_DURATION = 0;
 const FLAT_CURVE = [0, 0];
 
 async function deployTokens() {

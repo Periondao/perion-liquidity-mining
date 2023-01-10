@@ -28,10 +28,10 @@ const question = (questionText: string) =>
 // Parameters /////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // Duration used for Escrowed Perion
-const ESCROW_DURATION = 60 * 60 * 24 * 365;
+const ESCROW_DURATION = 0;
 
 // Portion of the funds that escrow (1 = 100%)
-const ESCROW_PORTION = parseEther("1");
+const ESCROW_PORTION = parseEther("0");
 
 // Security measure that limits the setting of curve points
 const MAX_BONUS = parseEther("5");
