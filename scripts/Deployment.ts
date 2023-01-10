@@ -33,7 +33,6 @@ const ESCROW_DURATION = 0;
 // Portion of the funds that escrow (1 = 100%)
 const ESCROW_PORTION = parseEther("0");
 
-// Security measure that limits the setting of curve points
 const MAX_BONUS = parseEther("5");
 
 // Maximum duration that a lock can have
@@ -41,15 +40,6 @@ const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 3;
 
 // end date of the staking program
 const END_DATE = 1768993200;
-
-// Curve used for the non escrow pools
-const CURVE = [
-    parseEther("0"),
-    parseEther("0.65"),
-    parseEther("1.5"),
-    parseEther("3"),
-    parseEther("5")
-]
 
 // MAINNET ////////////////////////////////////////////////////////////////////////
 // 0x12D73beE50F0b9E06B35Fdef93E563C965796482 | Perion Multisig
@@ -158,7 +148,6 @@ async function deployUpgradeable() {
         MAX_BONUS,
         MAX_LOCK_DURATION,
         END_DATE,
-        CURVE
     ]
 
     const PERCPoolImplementationInterface = new hre.ethers.utils.Interface(JSON.stringify(TimeLockNonTransferablePoolJSON.abi))
@@ -220,7 +209,6 @@ async function deployUpgradeable() {
         MAX_BONUS,
         MAX_LOCK_DURATION,
         END_DATE,
-        CURVE
     ]
 
     const PERCETHLPPoolImplementationInterface = new hre.ethers.utils.Interface(JSON.stringify(TimeLockNonTransferablePoolJSON.abi))

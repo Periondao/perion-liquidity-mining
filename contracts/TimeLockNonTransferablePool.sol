@@ -14,10 +14,9 @@ contract TimeLockNonTransferablePool is TimeLockPool {
         uint256 _escrowDuration,
         uint256 _maxBonus,
         uint256 _maxLockDuration,
-        uint _endDate,
-        uint256[] memory _curve
+        uint _endDate
     ) public initializer {
-        __TimeLockPool_init(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration, _maxBonus, _maxLockDuration, _endDate, _curve);
+        __TimeLockPool_init(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration, _maxBonus, _maxLockDuration, _endDate);
     }
 
     // disable transfers

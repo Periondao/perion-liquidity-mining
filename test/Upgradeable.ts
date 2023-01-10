@@ -30,57 +30,11 @@ import * as TimeLockNonTransferablePoolV2JSON from "../artifacts/contracts/test/
 
 const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const ESCROW_PORTION = parseEther("0.77");
-const MAX_BONUS = parseEther("10"); // Same as max value in the curve
+const MAX_BONUS = parseEther("10");
 const MAX_BONUS_ESCROW = parseEther("1");
 const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 4;
 const END_DATE = 9999999999;
 const INITIAL_MINT = parseEther("1000000");
-const FLAT_CURVE = [(1e18).toString(), (1e18).toString()];
-const CURVE = [
-    (0*1e18).toString(),
-    (0.65*1e18).toString(),
-    (1.5*1e18).toString(),
-    (3*1e18).toString(),
-    (5*1e18).toString()
-]
-
-function theoreticalMultiplier(
-    _duration: any,
-    curve: any
-) {
-
-    const unit = Math.floor(MAX_LOCK_DURATION / (curve.length - 1))
-    const duration = Math.min(Math.max(Number(_duration), 600), MAX_LOCK_DURATION)
-    const n = Math.floor(duration / unit)
-
-    if (n == curve.length - 1) {
-        const mcn = hre.ethers.BigNumber.from(curve[n])
-        let result
-        if(mcn.lt(MAX_BONUS)) {
-            result = mcn.add(parseEther("1"))
-        } else {
-            result = MAX_BONUS.add(parseEther("1"))
-        }
-
-        return result.toString()
-    }
-
-    const mcn = hre.ethers.BigNumber.from(curve[n])
-    const mcn1 = hre.ethers.BigNumber.from(curve[n + 1])
-    const BNunit = hre.ethers.BigNumber.from(unit)
-    const BNn = hre.ethers.BigNumber.from(n)
-    const BNduration = hre.ethers.BigNumber.from(_duration)
-
-    const res = mcn.add(BNduration.sub(BNn.mul(BNunit)).mul(mcn1.sub(mcn)).div(BNunit))
-    let result
-    if(res.lt(MAX_BONUS)) {
-        result = res.add(parseEther("1"))
-    } else {
-        result = MAX_BONUS.add(parseEther("1"))
-    }
-
-    return result.toString()
-}
 
 describe("TimeLockPool", function () {
 
@@ -137,7 +91,6 @@ describe("TimeLockPool", function () {
             MAX_BONUS_ESCROW,
             ESCROW_DURATION,
             END_DATE,
-            FLAT_CURVE
         );
 
         const timeLockNonTransferablePoolFactory = new TimeLockNonTransferablePool__factory(deployer);
@@ -155,7 +108,6 @@ describe("TimeLockPool", function () {
             MAX_BONUS.mul(10),
             MAX_LOCK_DURATION,
             END_DATE,
-            CURVE
         ]
 
         const TimeLockNonTransferablePoolInterface = new hre.ethers.utils.Interface(JSON.stringify(TimeLockNonTransferablePoolJSON.abi))
@@ -308,55 +260,6 @@ describe("TimeLockPool", function () {
                 }
             });
 
-            it("Should preserve storage when changing curve", async() => {
-                const NEW_RAW_CURVE = [
-                    0,
-                    0.113450636781733,
-                    0.23559102796425,
-                    0.367086765506204,
-                    0.508654422399196,
-                    0.661065457561288,
-                    0.825150419825931,
-                    1.00180347393553,
-                    1.19198727320361,
-                    1.39673820539865,
-                    1.61717204043653,
-                    1.85449001065813,
-                    2.10998535682594,
-                    2.38505037551144,
-                    2.6811840062773,
-                    3,
-                    3.34323571284532,
-                    3.71276157381861,
-                    4.11059127748229,
-                    4.53889275738489,
-                    5
-                ]
-                // Setting a new curve should still work while getting the multiplier
-                const NEW_CURVE = NEW_RAW_CURVE.map(function(x) {
-                    return (x*1e18).toString();
-                })
-                await timeLockNonTransferablePool.connect(governance).setCurve(NEW_CURVE);
-
-                let slot: string[] = new Array;
-                for(let i = 0; i < 1000; i++) {
-                    slot.push(await hre.ethers.provider.getStorageAt(timeLockNonTransferablePool.address, i))
-                }
-
-                // Upgrade
-                const timeLockNonTransferablePoolFactoryV2 = new TimeLockNonTransferablePoolV2__factory(deployer);
-                let timeLockNonTransferablePoolImplementationV2: TimeLockNonTransferablePoolV2;
-                timeLockNonTransferablePoolImplementationV2 = await timeLockNonTransferablePoolFactoryV2.deploy();
-                await proxyAdmin.connect(governance).upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
-                let timeLockNonTransferablePoolV2: Contract;
-                timeLockNonTransferablePoolV2 = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi), deployer);
-
-                for(let i = 0; i < 1000; i++) {
-                    const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
-                    expect(slot[i]).to.be.eq(slotV2);
-                }
-            });
-
             it("Should find a slot that changed", async() => {
                 let slot: string[] = new Array;
                 for(let i = 0; i < 2000; i++) {
@@ -391,12 +294,4 @@ describe("TimeLockPool", function () {
 
         });
     });
-
-
-
-
-
-
-
-
 });

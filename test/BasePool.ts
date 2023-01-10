@@ -10,8 +10,6 @@ import {
     TestToken__factory,
     TestTimeLockPool,
     TestTimeLockPool__factory,
-    TimeLockNonTransferablePool,
-    TimeLockNonTransferablePool__factory
 } from "../typechain";
 import TimeTraveler from "../utils/TimeTraveler";
 
@@ -21,7 +19,6 @@ const TOKEN_SYMBOL = "STKN";
 const ESCROW_PORTION = parseEther("0.6");
 const ESCROW_DURATION = 60 * 60 * 24 * 365; // 1 year
 const MAX_BONUS_ESCROW = parseEther("1");
-const FLAT_CURVE = [(1e18).toString(), (1e18).toString()];
 const END_DATE = 9999999999;
 const INITIAL_MINT = parseEther("1000000000");
 
@@ -76,7 +73,6 @@ describe("BasePool", function () {
             MAX_BONUS_ESCROW,
             ESCROW_DURATION,
             END_DATE,
-            FLAT_CURVE
         );
 
         const testBasePoolFactory = new TestBasePool__factory(deployer);
