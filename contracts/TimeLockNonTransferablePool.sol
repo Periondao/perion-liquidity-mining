@@ -4,6 +4,12 @@ pragma solidity 0.8.7;
 import "./TimeLockPool.sol";
 
 contract TimeLockNonTransferablePool is TimeLockPool {
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         string memory _name,
         string memory _symbol,
