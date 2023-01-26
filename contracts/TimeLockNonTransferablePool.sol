@@ -5,6 +5,8 @@ import "./TimeLockPool.sol";
 
 contract TimeLockNonTransferablePool is TimeLockPool {
 
+    uint256[50] __gap; // Storage gap for reserving storage slots in future upgrades and preserve storage layout.
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();

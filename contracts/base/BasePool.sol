@@ -23,9 +23,7 @@ abstract contract BasePool is Initializable, AccessControlEnumerable, ERC20Votes
     error NoDepositTokenError();
     error NotGovError();
     error EscrowPoolError();
-
-    uint256[50] __gap; // Storage gap for reserving storage slots in future upgrades and preserve storage layout.
-
+    
     uint256 public constant ONE = 1e18; // used as a unit for calculations.
 
     IERC20 public depositToken;
@@ -43,7 +41,7 @@ abstract contract BasePool is Initializable, AccessControlEnumerable, ERC20Votes
         _onlyGov();
         _;
     }
-    
+
     function _onlyGov() private view {
         if (!hasRole(GOV_ROLE, _msgSender())) {
             revert NotGovError();
@@ -89,7 +87,7 @@ abstract contract BasePool is Initializable, AccessControlEnumerable, ERC20Votes
 		super._mint(_account, _amount);
         _correctPoints(_account, -(_amount.toInt256()));
 	}
-	
+
 	function _burn(address _account, uint256 _amount) internal virtual override {
 		super._burn(_account, _amount);
         _correctPoints(_account, _amount.toInt256());
