@@ -43,11 +43,7 @@ if (!infuraApiKey) {
 function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
   const url: string = "https://" + network + ".infura.io/v3/" + infuraApiKey;
   return {
-    accounts: {
-      count: 10,
-      mnemonic,
-      path: "m/44'/60'/0'/0",
-    },
+    accounts: process.env.PRIVATE_KEY_DEPLOYER != undefined ? [process.env.PRIVATE_KEY_DEPLOYER] : [],
     chainId: chainIds[network],
     url,
   };
