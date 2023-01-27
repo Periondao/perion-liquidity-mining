@@ -4,9 +4,9 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
-import '@openzeppelin/hardhat-upgrades';
+import "@openzeppelin/hardhat-upgrades";
 
-if(!process.env.COMPILE_ONLY) {
+if (!process.env.COMPILE_ONLY) {
   require("./tasks/accounts");
   require("./tasks/clean");
   require("./tasks/deploy");
@@ -68,7 +68,7 @@ const config: HardhatUserConfig = {
     kovan: getChainConfig("kovan"),
     rinkeby: getChainConfig("rinkeby"),
     ropsten: getChainConfig("ropsten"),
-    mainnet: { gasPrice: 120000000000, ...getChainConfig("mainnet")},
+    mainnet: { gasPrice: 120000000000, ...getChainConfig("mainnet") },
   },
   paths: {
     artifacts: "./artifacts",
@@ -99,9 +99,9 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       mainnet: process.env.ETHERSCAN_KEY,
-      goerli: process.env.ETHERSCAN_KEY
-    }
-  }
+      goerli: process.env.ETHERSCAN_KEY,
+    },
+  },
 };
 
 export default config;

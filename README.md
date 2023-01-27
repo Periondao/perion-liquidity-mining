@@ -1,64 +1,73 @@
 # Perion Liquidity Mining Smart Contracts
+
 This repo contains the smart contracts for Perion's staking program. Perion liquidity mining rewards users who deposit their PERC and PERC/WETH Sushi Swap LP tokens.
 
 ## Reward Distribution
+
 Perion DAO will distribute rewards in PERC with 80% of the rewards going to sushi swap LP stakers and 20% going to PERC stakers.
 
 ## Duration
+
 This staking program will go on until the 22nd of January 2026. Users will not be able to stake past this date. Users can stake for a minimum of 1 month and a maximum of 36 months (or until the end date, whichever comes first).
 
 ## Multipliers
+
 Users are rewarded proportional to the amount of tokens they stake and the amount of time they wish to lock up their tokens. Users who stake for 3 years will be given the max multiplier of `5x`. The reward multiplier can be calculated using `1x + months / 9 * 36`.
 
 ## Functionality
 
 ### Deposit
+
 Users deposit either PERC or Sushi Swap LP PERC into the staking contract. This mints them a token representative of their share of the pool. Once you have staked your coins, you are unable to withdraw either the deposit principle or rewards until the duration has passed.
 
-| **Name**    | **Type** | **Description**                                                                 |
-| ----------- | -------- | ------------------------------------------------------------------------------- |
-| `_amount`    | `uint` | the amount the user wishes to deposit                                               |
-| `_duration` | `uint`   | the duration that they want to lock their tokens up for                  |
-| `_receiver` | `address`   | the receiver of the share tokens resulting from this deposit |
-
+| **Name**    | **Type**  | **Description**                                              |
+| ----------- | --------- | ------------------------------------------------------------ |
+| `_amount`   | `uint`    | the amount the user wishes to deposit                        |
+| `_duration` | `uint`    | the duration that they want to lock their tokens up for      |
+| `_receiver` | `address` | the receiver of the share tokens resulting from this deposit |
 
 ### Withdraw
+
 Users can withdraw their principle after the deposit duration has been met. Withdrawing deposit tokens results in a proportional burn of the share token.
 
-| **Name**    | **Type** | **Description**                                                                 |
-| ----------- | -------- | ------------------------------------------------------------------------------- |
-| `_depositId`    | `uint` | the index of the user's deposit                                               |
-| `_receiver` | `address`   | the receiver of the tokens to be withdrawn |
+| **Name**     | **Type**  | **Description**                            |
+| ------------ | --------- | ------------------------------------------ |
+| `_depositId` | `uint`    | the index of the user's deposit            |
+| `_receiver`  | `address` | the receiver of the tokens to be withdrawn |
 
 ### extendLock
+
 Users can extend the deposit duration for their staked funds. This will result in more share tokens being minted, proportional to the increase in time.
 
-| **Name**    | **Type** | **Description**                                                                 |
-| ----------- | -------- | ------------------------------------------------------------------------------- |
-| `_depositId`    | `uint` | the index of the user's deposits                                               |
+| **Name**            | **Type** | **Description**                               |
+| ------------------- | -------- | --------------------------------------------- |
+| `_depositId`        | `uint`   | the index of the user's deposits              |
 | `_increaseDuration` | `uint`   | the amount of time to increase the deposit by |
 
 ### increaseLock
+
 The same as `entendLock` except that the user adds more funds to the deposit.
 
-| **Name**    | **Type** | **Description**                                                                 |
-| ----------- | -------- | ------------------------------------------------------------------------------- |
-| `_depositId`    | `uint` | the index of the user's deposits                                               |
-| `_receiver` | `address`   | the receiver of the deposit withdrawal |
-| `_increaseAmount`    | `uint` | the amount of coins to add                                               |
+| **Name**          | **Type**  | **Description**                        |
+| ----------------- | --------- | -------------------------------------- |
+| `_depositId`      | `uint`    | the index of the user's deposits       |
+| `_receiver`       | `address` | the receiver of the deposit withdrawal |
+| `_increaseAmount` | `uint`    | the amount of coins to add             |
 
 ### claimRewards
+
 Users can claim their share of the rewards (proportional to their share token holdings). These rewards are escrowed and locked based on the escrow `duration` set. Perion will set the escrow `duration` to zero and therefore the user can claim the reward as soon as they become available.
 
-| **Name**    | **Type** | **Description**                                                                 |
-| ----------- | -------- | ------------------------------------------------------------------------------- |
-| `_receiver` | `address`   | the receiver of the rewards |
+| **Name**    | **Type**  | **Description**             |
+| ----------- | --------- | --------------------------- |
+| `_receiver` | `address` | the receiver of the rewards |
 
 ### distributeRewards
+
 This function calculates the reward per share token and deposits tokens from the caller into the pool. This function can be called by anyone but is typically only called by the perion treasury multisig. This call enables `claimRewards` to work.
 
-| **Name**    | **Type** | **Description**                                                                 |
-| ----------- | -------- | ------------------------------------------------------------------------------- |
+| **Name**  | **Type** | **Description**                               |
+| --------- | -------- | --------------------------------------------- |
 | `_amount` | `uint`   | the amount of reward tokens to be distributed |
 
 ## Usage

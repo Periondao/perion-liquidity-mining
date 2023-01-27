@@ -32,6 +32,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         uint64 start;
         uint64 end;
     }
+
     function __TimeLockPool_init(
         string memory _name,
         string memory _symbol,
@@ -49,7 +50,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
             revert SmallMaxLockDuration();
         }
         maxBonus = _maxBonus;
-        if(block.timestamp > _endDate) {
+        if (block.timestamp > _endDate) {
             revert ProgramExpiredError();
         }
         endDate = _endDate;
@@ -75,8 +76,12 @@ contract TimeLockPool is BasePool, ITimeLockPool {
      * @param _duration uint256 time that the deposit will be locked.
      * @param _receiver address owner of the lock
      */
-    function deposit(uint256 _amount, uint256 _duration, address _receiver) external override {
-        if(block.timestamp + MIN_LOCK_DURATION > endDate) revert ProgramExpiredError();
+    function deposit(
+        uint256 _amount,
+        uint256 _duration,
+        address _receiver
+    ) external override {
+        if (block.timestamp + MIN_LOCK_DURATION > endDate) revert ProgramExpiredError();
         if (_amount == 0) {
             revert ZeroAmountError();
         }
@@ -84,20 +89,22 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         uint256 duration = _duration.min(maxLockDuration);
         // Enforce min lockup duration to prevent flash loan or MEV transaction ordering
         duration = duration.max(MIN_LOCK_DURATION);
-        if(duration + block.timestamp > endDate) {
+        if (duration + block.timestamp > endDate) {
             // only allow the user to deposit up to the endDate
-            uint difference = (duration + block.timestamp) - endDate;
+            uint256 difference = (duration + block.timestamp) - endDate;
             duration -= difference;
         }
 
-        uint256 mintAmount = _amount * getMultiplier(duration) / ONE;
+        uint256 mintAmount = (_amount * getMultiplier(duration)) / ONE;
 
-        depositsOf[_receiver].push(Deposit({
-            amount: _amount,
-            shareAmount: mintAmount,
-            start: uint64(block.timestamp),
-            end: uint64(block.timestamp) + uint64(duration)
-        }));
+        depositsOf[_receiver].push(
+            Deposit({
+                amount: _amount,
+                shareAmount: mintAmount,
+                start: uint64(block.timestamp),
+                end: uint64(block.timestamp) + uint64(duration)
+            })
+        );
 
         _mint(_receiver, mintAmount);
         depositToken.safeTransferFrom(_msgSender(), address(this), _amount);
@@ -165,13 +172,13 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         // New duration is the time expiration plus the increase
         uint256 duration = maxLockDuration.min(uint256(userDeposit.end - block.timestamp) + increaseDuration);
 
-        uint256 mintAmount = userDeposit.amount * getMultiplier(duration) / ONE;
+        uint256 mintAmount = (userDeposit.amount * getMultiplier(duration)) / ONE;
 
         // If the new amount if bigger mint the difference
         if (mintAmount >= userDeposit.shareAmount) {
-            depositsOf[_msgSender()][_depositId].shareAmount =  mintAmount;
+            depositsOf[_msgSender()][_depositId].shareAmount = mintAmount;
             _mint(_msgSender(), mintAmount - userDeposit.shareAmount);
-        // If the new amount is less then burn that difference
+            // If the new amount is less then burn that difference
         } else {
             revert ShareBurningError();
         }
@@ -192,7 +199,11 @@ contract TimeLockPool is BasePool, ITimeLockPool {
      * @param _receiver address owner of the lock
      * @param _increaseAmount uint256 amount of tokens to add to the lock.
      */
-    function increaseLock(uint256 _depositId, address _receiver, uint256 _increaseAmount) external {
+    function increaseLock(
+        uint256 _depositId,
+        address _receiver,
+        uint256 _increaseAmount
+    ) external {
         // Check if actually increasing
         if (_increaseAmount == 0) {
             revert ZeroAmountError();
@@ -208,7 +219,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         // Multiplier should be according the remaining time  from the deposit until its end.
         uint256 remainingDuration = uint256(userDeposit.end - block.timestamp);
 
-        uint256 mintAmount = _increaseAmount * getMultiplier(remainingDuration) / ONE;
+        uint256 mintAmount = (_increaseAmount * getMultiplier(remainingDuration)) / ONE;
 
         depositsOf[_receiver][_depositId].amount += _increaseAmount;
         depositsOf[_receiver][_depositId].shareAmount += mintAmount;
@@ -218,28 +229,28 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         emit LockIncreased(_depositId, _receiver, _msgSender(), _increaseAmount);
     }
 
-    function getMultiplier(uint256 _lockDuration) public view returns(uint256) {
-        return 1e18 + (maxBonus * _lockDuration / maxLockDuration);
+    function getMultiplier(uint256 _lockDuration) public view returns (uint256) {
+        return 1e18 + ((maxBonus * _lockDuration) / maxLockDuration);
     }
 
-    function getTotalDeposit(address _account) public view returns(uint256) {
+    function getTotalDeposit(address _account) public view returns (uint256) {
         uint256 total;
-        for(uint256 i = 0; i < depositsOf[_account].length; i++) {
+        for (uint256 i = 0; i < depositsOf[_account].length; i++) {
             total += depositsOf[_account][i].amount;
         }
 
         return total;
     }
 
-    function getDepositsOf(address _account) public view returns(Deposit[] memory) {
+    function getDepositsOf(address _account) public view returns (Deposit[] memory) {
         return depositsOf[_account];
     }
 
-    function getDepositsOfLength(address _account) public view returns(uint256) {
+    function getDepositsOfLength(address _account) public view returns (uint256) {
         return depositsOf[_account].length;
     }
 
-    function maxBonusError(uint256 _point) internal returns(uint256) {
+    function maxBonusError(uint256 _point) internal returns (uint256) {
         if (_point > maxBonus) {
             revert MaxBonusError();
         } else {
@@ -258,6 +269,6 @@ contract TimeLockPool is BasePool, ITimeLockPool {
 
         // burn pool shares so that resulting are equal to deposit amount
         _burn(_user, userDeposit.shareAmount - userDeposit.amount);
-        depositsOf[_user][_depositId].shareAmount =  userDeposit.amount;
+        depositsOf[_user][_depositId].shareAmount = userDeposit.amount;
     }
 }

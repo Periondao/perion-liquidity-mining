@@ -4,7 +4,6 @@ pragma solidity 0.8.7;
 import "./TimeLockPool.sol";
 
 contract TimeLockNonTransferablePool is TimeLockPool {
-
     uint256[50] __gap; // Storage gap for reserving storage slots in future upgrades and preserve storage layout.
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -22,13 +21,28 @@ contract TimeLockNonTransferablePool is TimeLockPool {
         uint256 _escrowDuration,
         uint256 _maxBonus,
         uint256 _maxLockDuration,
-        uint _endDate
+        uint256 _endDate
     ) public initializer {
-        __TimeLockPool_init(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration, _maxBonus, _maxLockDuration, _endDate);
+        __TimeLockPool_init(
+            _name,
+            _symbol,
+            _depositToken,
+            _rewardToken,
+            _escrowPool,
+            _escrowPortion,
+            _escrowDuration,
+            _maxBonus,
+            _maxLockDuration,
+            _endDate
+        );
     }
 
     // disable transfers
-    function _transfer(address _from, address _to, uint256 _amount) internal override {
+    function _transfer(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) internal override {
         revert("NON_TRANSFERABLE");
     }
 }

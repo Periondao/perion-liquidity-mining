@@ -4,7 +4,6 @@ pragma solidity 0.8.7;
 import "../base/BasePool.sol";
 
 contract TestBasePool is BasePool {
-
     constructor(
         string memory _name,
         string memory _symbol,
@@ -16,8 +15,8 @@ contract TestBasePool is BasePool {
     ) {
         initializeTest(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration);
     }
-    
-    function initializeTest (
+
+    function initializeTest(
         string memory _name,
         string memory _symbol,
         address _depositToken,
@@ -26,15 +25,7 @@ contract TestBasePool is BasePool {
         uint256 _escrowPortion,
         uint256 _escrowDuration
     ) public initializer {
-        __BasePool_init(
-            _name,
-            _symbol,
-            _depositToken,
-            _rewardToken,
-            _escrowPool,
-            _escrowPortion,
-            _escrowDuration
-        );
+        __BasePool_init(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration);
     }
 
     function mint(address _receiver, uint256 _amount) external {

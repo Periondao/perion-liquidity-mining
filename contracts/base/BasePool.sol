@@ -14,7 +14,14 @@ import "../interfaces/ITimeLockPool.sol";
 import "./AbstractRewards.sol";
 import "./BoringBatchable.sol";
 
-abstract contract BasePool is Initializable, AccessControlEnumerable, ERC20Votes, AbstractRewards, IBasePool, BoringBatchable {
+abstract contract BasePool is
+    Initializable,
+    AccessControlEnumerable,
+    ERC20Votes,
+    AbstractRewards,
+    IBasePool,
+    BoringBatchable
+{
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using SafeCast for int256;
@@ -23,7 +30,7 @@ abstract contract BasePool is Initializable, AccessControlEnumerable, ERC20Votes
     error NoDepositTokenError();
     error NotGovError();
     error EscrowPoolError();
-    
+
     uint256 public constant ONE = 1e18; // used as a unit for calculations.
 
     IERC20 public depositToken;
@@ -34,7 +41,12 @@ abstract contract BasePool is Initializable, AccessControlEnumerable, ERC20Votes
 
     bytes32 public constant GOV_ROLE = keccak256("GOV_ROLE");
 
-    event RewardsClaimed(address indexed _from, address indexed _receiver, uint256 _escrowedAmount, uint256 _nonEscrowedAmount);
+    event RewardsClaimed(
+        address indexed _from,
+        address indexed _receiver,
+        uint256 _escrowedAmount,
+        uint256 _nonEscrowedAmount
+    );
 
     // Saves space calling _onlyGov instead having the code
     modifier onlyGov() {
@@ -78,25 +90,29 @@ abstract contract BasePool is Initializable, AccessControlEnumerable, ERC20Votes
         escrowPortion = _escrowPortion;
         escrowDuration = _escrowDuration;
 
-        if(_rewardToken != address(0) && _escrowPool != address(0)) {
+        if (_rewardToken != address(0) && _escrowPool != address(0)) {
             IERC20(_rewardToken).safeApprove(_escrowPool, type(uint256).max);
         }
     }
 
     function _mint(address _account, uint256 _amount) internal virtual override {
-		super._mint(_account, _amount);
+        super._mint(_account, _amount);
         _correctPoints(_account, -(_amount.toInt256()));
-	}
+    }
 
-	function _burn(address _account, uint256 _amount) internal virtual override {
-		super._burn(_account, _amount);
+    function _burn(address _account, uint256 _amount) internal virtual override {
+        super._burn(_account, _amount);
         _correctPoints(_account, _amount.toInt256());
-	}
+    }
 
-    function _transfer(address _from, address _to, uint256 _value) internal virtual override {
-		super._transfer(_from, _to, _value);
+    function _transfer(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal virtual override {
+        super._transfer(_from, _to, _value);
         _correctPointsForTransfer(_from, _to, _value);
-	}
+    }
 
     function distributeRewards(uint256 _amount) external override {
         _distributeRewards(_amount);
@@ -105,19 +121,18 @@ abstract contract BasePool is Initializable, AccessControlEnumerable, ERC20Votes
 
     function claimRewards(address _receiver) external {
         uint256 rewardAmount = _prepareCollect(_msgSender());
-        uint256 escrowedRewardAmount = rewardAmount * escrowPortion / ONE;
+        uint256 escrowedRewardAmount = (rewardAmount * escrowPortion) / ONE;
         uint256 nonEscrowedRewardAmount = rewardAmount - escrowedRewardAmount;
 
-        if(escrowedRewardAmount != 0 && address(escrowPool) != address(0)) {
+        if (escrowedRewardAmount != 0 && address(escrowPool) != address(0)) {
             escrowPool.deposit(escrowedRewardAmount, escrowDuration, _receiver);
         }
 
         // ignore dust
-        if(nonEscrowedRewardAmount > 1) {
+        if (nonEscrowedRewardAmount > 1) {
             rewardToken.safeTransfer(_receiver, nonEscrowedRewardAmount);
         }
 
         emit RewardsClaimed(_msgSender(), _receiver, escrowedRewardAmount, nonEscrowedRewardAmount);
     }
-
 }

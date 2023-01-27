@@ -6,7 +6,6 @@ import "hardhat/console.sol";
 
 /// @dev reader contract to easily fetch all relevant info for an account
 contract View {
-
     struct Deposit {
         uint256 amount;
         uint256 shareAmount;
@@ -33,8 +32,7 @@ contract View {
 
     function fetchData(address _account, address[] calldata _pools) external view returns (Pool[] memory) {
         Pool[] memory list = new Pool[](_pools.length);
-        for(uint256 i = 0; i < _pools.length; i ++) {
-
+        for (uint256 i = 0; i < _pools.length; i++) {
             TimeLockPool poolContract = TimeLockPool(_pools[i]);
             list[i] = Pool({
                 poolAddress: _pools[i],
@@ -43,7 +41,7 @@ contract View {
 
             TimeLockPool.Deposit[] memory deposits = poolContract.getDepositsOf(_account);
 
-            for(uint256 j = 0; j < list[i].deposits.length; j ++) {
+            for (uint256 j = 0; j < list[i].deposits.length; j++) {
                 TimeLockPool.Deposit memory deposit = deposits[j];
                 list[i].deposits[j] = Deposit({
                     amount: deposit.amount,
@@ -58,7 +56,7 @@ contract View {
 
     function fetchOldData(address _account, address[] calldata _pools) external view returns (OldPool[] memory) {
         OldPool[] memory list = new OldPool[](_pools.length);
-        for(uint256 i = 0; i < _pools.length; i ++) {
+        for (uint256 i = 0; i < _pools.length; i++) {
             TimeLockPool poolContract = TimeLockPool(_pools[i]);
 
             list[i] = OldPool({
@@ -68,7 +66,7 @@ contract View {
 
             TimeLockPool.Deposit[] memory deposits = poolContract.getDepositsOf(_account);
 
-            for(uint256 j = 0; j < list[i].deposits.length; j ++) {
+            for (uint256 j = 0; j < list[i].deposits.length; j++) {
                 TimeLockPool.Deposit memory deposit = deposits[j];
                 list[i].deposits[j] = OldDeposit({
                     amount: deposit.amount,
@@ -80,5 +78,4 @@ contract View {
         }
         return list;
     }
-
 }

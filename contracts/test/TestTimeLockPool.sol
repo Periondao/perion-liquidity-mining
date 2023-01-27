@@ -4,7 +4,6 @@ pragma solidity 0.8.7;
 import "../TimeLockPool.sol";
 
 contract TestTimeLockPool is TimeLockPool {
-
     constructor(
         string memory _name,
         string memory _symbol,
@@ -17,7 +16,18 @@ contract TestTimeLockPool is TimeLockPool {
         uint256 _maxLockDuration,
         uint256 _endDate
     ) public initializer {
-        initializeTest(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration, _maxBonus, _maxLockDuration, _endDate);
+        initializeTest(
+            _name,
+            _symbol,
+            _depositToken,
+            _rewardToken,
+            _escrowPool,
+            _escrowPortion,
+            _escrowDuration,
+            _maxBonus,
+            _maxLockDuration,
+            _endDate
+        );
     }
 
     function initializeTest(
@@ -32,7 +42,17 @@ contract TestTimeLockPool is TimeLockPool {
         uint256 _maxLockDuration,
         uint256 _endDate
     ) public initializer {
-        __TimeLockPool_init(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration, _maxBonus, _maxLockDuration, _endDate);
+        __TimeLockPool_init(
+            _name,
+            _symbol,
+            _depositToken,
+            _rewardToken,
+            _escrowPool,
+            _escrowPortion,
+            _escrowDuration,
+            _maxBonus,
+            _maxLockDuration,
+            _endDate
+        );
     }
-
 }
