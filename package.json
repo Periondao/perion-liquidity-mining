@@ -63,6 +63,9 @@
   ],
   "private": true,
   "scripts": {
+    "approveAndDistribute": "npm run approve && npm run distribute",
+    "approve": "npx hardhat run scripts/rewards/Approve.ts --network mainnet",
+    "distribute": "npx hardhat run scripts/rewards/DistributeRewards.ts --network mainnet",
     "clean": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat clean",
     "commit": "git-cz",
     "compile": "cross-env COMPILE_ONLY=true TS_NODE_TRANSPILE_ONLY=true hardhat compile",
