@@ -1,8 +1,7 @@
-// TODO fill vars
 import { ethers } from 'hardhat'
-const PERC = "0x60be1e1fe41c1370adaf5d8e66f07cf1c2df2268";
-const sPERC = "";
-const sLPPERC = "";
+const PERC = process.env.PERC;
+const sPERC = process.ENV.SPERC;
+const sLPPERC = process.ENV.SLPPERC;
 const MAX_INT = ethers.BigNumber.MAX_VALUE;
 
 async function main() {
