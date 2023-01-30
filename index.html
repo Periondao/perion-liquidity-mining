@@ -8,6 +8,7 @@
   </script>
   <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", async () => {
+      const percDailyReward = ethers.utils.parseEther("1357.4");
       const chainIdUsed = "0x5";
       const contractAddress = "0x7A5830e1daD4b6ECd168c2A443841FA6409714A7"; // goerli
       const token = "0xe14c27cc6496f5b4471f29931337e7603d7b45c8";
@@ -28,6 +29,8 @@
       const withdrawable = await stakingContract.withdrawableRewardsOf(accounts[0]);
       const cumulative = await stakingContract.cumulativeRewardsOf(accounts[0]);
       const withdrawn = await stakingContract.withdrawnRewardsOf(accounts[0]);
+      const totalShares = await stakingContract.totalSupply();
+      console.log("P:" + totalShares)
       document.getElementById("claimable").innerText += " " + withdrawable;
       document.getElementById("locked").innerText += " " + parseInt(cumulative) - (parseInt(withdrawable) + parseInt(withdrawn));
       document.getElementById("deposits").innerText += "\n" + await getDepositsInfo();
@@ -36,7 +39,9 @@
         const deposits = await stakingContract.getDepositsOf(accounts[0]);
 
         return deposits.map((d, i) => {
-          return `\n${i + 1}: Deposited: ${d.amount}, shares: ${d.shareAmount}, deposited at: ${d.start}, withdrawable on: ${d.end}`;
+          const annualEarnings = d.shareAmount.mul(percDailyReward).mul(365).div(totalShares);
+          const apr = annualEarnings.mul(100).div(d.amount);
+          return `\n${i + 1}: Deposited: ${d.amount}, shares: ${d.shareAmount}, deposited at: ${d.start}, withdrawable on: ${d.end}, estimated APR: ${apr}%`;
         })
       }
 
