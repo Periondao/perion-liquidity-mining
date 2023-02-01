@@ -36,7 +36,7 @@ const MAX_BONUS = parseEther("5");
 const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 3;
 
 // end date of the staking program
-const END_DATE = 1768993200;
+const END_DATE = 1864558800; // 1 Feb 2029
 
 // MAINNET ////////////////////////////////////////////////////////////////////////
 // 0x12D73beE50F0b9E06B35Fdef93E563C965796482 | Perion Multisig
@@ -71,7 +71,7 @@ const GORLI_PERC_TOKEN = "0xE14C27Cc6496f5b4471F29931337E7603D7B45C8";
 // 0xcCb63225a7B19dcF66717e4d40C9A72B39331d61 | PERC/ETH Sushi LP
 const GORLI_SUSHI_LP_TOKEN = "0x233ED7B71f183b743C0534caf6A431653e4dB199";
 // 0xfEEA44bc2161F2Fe11D55E557ae4Ec855e2D1168 | Escrowed Perion (eMC)
-const GORLI_ESCROW_POOL = "0x7f817aC28ddd7976c3179E950FF0a43F9667cdD3";
+const GORLI_ESCROW_POOL = "0x0000000000000000000000000000000000000000";
 
 let PERC_TOKEN: string;
 let PERC_ETHLP_TOKEN: string;
@@ -83,7 +83,6 @@ async function deployUpgradeable() {
 
   const chainChoosing = await question("Type 1 for Localhost, 2 for Mainnet or 3 for Görli: ");
 
-  // TODO localhost and mainnet are swapped, investigate how this is supposed to function
   if (chainChoosing == "1") {
     // MAINNET ////////////////////////////////////////////////////////////////////////
     MULTISIG = MAINNET_MULTISIG;
@@ -275,6 +274,9 @@ async function deployUpgradeable() {
   console.log("  -deposit for 3 years more than $100 LP in LP Pool");
   console.log("  -transfer ownership to MULTISIG in percPoolProxyAdmin and percEthlpPoolProxyAdmin");
   console.log("  -renounce DEFAULT_ADMIN_ROLE in both pools", "\n");
+
+  await percEthlpPoolProxy.renounceRole(DEFAULT_ADMIN_ROLE, signers[0].address);
+  console.log("renounced deployer GOV_ROLE & DEFAULT_ADMIN_ROLE");
 
   console.log("❤⭕");
 
