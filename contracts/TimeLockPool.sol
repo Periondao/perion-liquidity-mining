@@ -81,7 +81,9 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         uint256 _duration,
         address _receiver
     ) external override {
-        if (block.timestamp + MIN_LOCK_DURATION > endDate) revert ProgramExpiredError();
+        if (block.timestamp + MIN_LOCK_DURATION > endDate) {
+            revert ProgramExpiredError();
+        }
         if (_amount == 0) {
             revert ZeroAmountError();
         }
@@ -171,6 +173,11 @@ contract TimeLockPool is BasePool, ITimeLockPool {
 
         // New duration is the time expiration plus the increase
         uint256 duration = maxLockDuration.min(uint256(userDeposit.end - block.timestamp) + increaseDuration);
+        if (duration + block.timestamp > endDate) {
+            // only allow the user to deposit up to the endDate
+            uint256 difference = (duration + block.timestamp) - endDate;
+            duration -= difference;
+        }
 
         uint256 mintAmount = (userDeposit.amount * getMultiplier(duration)) / ONE;
 
