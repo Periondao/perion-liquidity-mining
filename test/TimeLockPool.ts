@@ -1,17 +1,12 @@
 import { parseEther, formatEther } from "@ethersproject/units";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
 import { BigNumber, constants, Contract } from "ethers";
 import hre, { ethers } from "hardhat";
 import {
   View__factory,
   TestToken__factory,
-  TimeLockPool__factory,
   TestTimeLockPool__factory,
-  ProxyAdmin__factory,
-  TransparentUpgradeableProxy__factory,
-  TimeLockNonTransferablePoolV2__factory,
 } from "../typechain";
 import {
   View,
@@ -20,12 +15,8 @@ import {
   TestTimeLockPool,
   ProxyAdmin,
   TransparentUpgradeableProxy,
-  TimeLockNonTransferablePoolV2,
 } from "../typechain";
 import TimeTraveler from "../utils/TimeTraveler";
-import * as TimeLockPoolJSON from "../artifacts/contracts/TimeLockPool.sol/TimeLockPool.json";
-import * as TimeLockNonTransferablePoolV2JSON from "../artifacts/contracts/test/TimeLockNonTransferablePoolV2.sol/TimeLockNonTransferablePoolV2.json";
-
 const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const ESCROW_PORTION = parseEther("0.77");
 const MAX_BONUS = parseEther("10");
@@ -254,6 +245,17 @@ describe("TimeLockPool", function () {
 
     it("Extending with zero duration should fail", async () => {
       await expect(timeLockPool.extendLock(0, 0)).to.be.revertedWith("ZeroDurationError()");
+    });
+
+    it("should not allow you to deposit past the endDate", async() => {
+      const end = await timeLockPool.endDate();
+      const minLockDuration = await timeLockPool.MIN_LOCK_DURATION();
+      await timeTraveler.setNextBlockTimestamp(end - minLockDuration.mul(2));
+      await timeTraveler.mine_blocks(1);
+      await timeLockPool.deposit(1000, minLockDuration, account1.address);
+      await timeLockPool.extendLock(1, MAX_LOCK_DURATION / 2);
+      const deposit = await timeLockPool.depositsOf(account1.address, 1);
+      expect(deposit.end).to.equal(end);
     });
 
     it("Extending when deposit has already expired should fail", async () => {
