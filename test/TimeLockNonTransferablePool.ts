@@ -6,8 +6,8 @@ import hre, { ethers } from "hardhat";
 import {
   TestToken,
   TestToken__factory,
-  TimeLockNonTransferablePool,
-  TimeLockNonTransferablePool__factory,
+  TimeLockNonTransferablePoolV2,
+  TimeLockNonTransferablePoolV2__factory,
   TransparentUpgradeableProxy,
   TransparentUpgradeableProxy__factory,
   TestTimeLockPool,
@@ -16,7 +16,7 @@ import {
   ProxyAdmin__factory,
 } from "../typechain";
 import TimeTraveler from "../utils/TimeTraveler";
-import * as TimeLockNonTransferablePoolJSON from "../artifacts/contracts/TimeLockNonTransferablePool.sol/TimeLockNonTransferablePool.json";
+import * as TimeLockNonTransferablePoolV2JSON from "../artifacts/contracts/TimeLockNonTransferablePoolV2.sol/TimeLockNonTransferablePoolV2.json";
 
 const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const ESCROW_PORTION = parseEther("0.77");
@@ -36,7 +36,7 @@ describe("TimeLockNonTransferablePool", function () {
   let signers: SignerWithAddress[];
 
   let timeLockPool: Contract;
-  let timeLockNonTransferablePoolImplementation: TimeLockNonTransferablePool;
+  let timeLockNonTransferablePoolImplementation: TimeLockNonTransferablePoolV2;
   let escrowPool: TestTimeLockPool;
   let depositToken: TestToken;
   let rewardToken: TestToken;
@@ -72,10 +72,11 @@ describe("TimeLockNonTransferablePool", function () {
       MAX_BONUS_ESCROW,
       ESCROW_DURATION,
       END_DATE,
+      account1.address
     );
 
     // Deploy the TimeLockPool implementation
-    const timeLockNonTransferablePoolFactory = new TimeLockNonTransferablePool__factory(deployer);
+    const timeLockNonTransferablePoolFactory = new TimeLockNonTransferablePoolV2__factory(deployer);
     timeLockNonTransferablePoolImplementation = await timeLockNonTransferablePoolFactory.deploy();
 
     const initializeParameters = [
@@ -89,10 +90,11 @@ describe("TimeLockNonTransferablePool", function () {
       MAX_BONUS,
       MAX_LOCK_DURATION,
       END_DATE,
+      account1.address
     ];
 
     const timeLockNonTransferablePoolInterface = new hre.ethers.utils.Interface(
-      JSON.stringify(TimeLockNonTransferablePoolJSON.abi),
+      JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
     );
     // Encode data to call the initialize function in the implementation
     const encoded_data = timeLockNonTransferablePoolInterface.encodeFunctionData("initialize", initializeParameters);
@@ -102,7 +104,7 @@ describe("TimeLockNonTransferablePool", function () {
     proxy = await Proxy.deploy(timeLockNonTransferablePoolImplementation.address, proxyAdmin.address, encoded_data);
 
     // Create an interface of the implementation on the proxy so we can send the methods of the implementation
-    timeLockPool = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolJSON.abi), deployer);
+    timeLockPool = new ethers.Contract(proxy.address, JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi), deployer);
 
     // connect account1 to all contracts
     timeLockPool = timeLockPool.connect(account1);

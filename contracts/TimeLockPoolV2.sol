@@ -8,7 +8,7 @@ import { SafeERC20Upgradeable as SafeERC20 } from "@openzeppelin/contracts-upgra
 import "./base/BasePool.sol";
 import "./interfaces/ITimeLockPool.sol";
 
-contract TimeLockPool is BasePool, ITimeLockPool {
+contract TimeLockPoolV2 is BasePool, ITimeLockPool {
     using Math for uint256;
     using SafeERC20 for IERC20;
 
@@ -25,6 +25,8 @@ contract TimeLockPool is BasePool, ITimeLockPool {
     uint256 public endDate;
 
     mapping(address => Deposit[]) public depositsOf;
+
+    address public admin;
 
     struct Deposit {
         uint256 amount;
@@ -43,7 +45,8 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         uint256 _escrowDuration,
         uint256 _maxBonus,
         uint256 _maxLockDuration,
-        uint256 _endDate
+        uint256 _endDate,
+        address _admin
     ) internal onlyInitializing {
         __BasePool_init(_name, _symbol, _depositToken, _rewardToken, _escrowPool, _escrowPortion, _escrowDuration);
         if (_maxLockDuration < MIN_LOCK_DURATION) {
@@ -55,6 +58,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         }
         endDate = _endDate;
         maxLockDuration = _maxLockDuration;
+        admin = _admin;
     }
 
     error DepositExpiredError();
@@ -101,11 +105,11 @@ contract TimeLockPool is BasePool, ITimeLockPool {
 
         depositsOf[_receiver].push(
             Deposit({
-        amount: _amount,
-        shareAmount: mintAmount,
-        start: uint64(block.timestamp),
-        end: uint64(block.timestamp) + uint64(duration)
-        })
+                amount: _amount,
+                shareAmount: mintAmount,
+                start: uint64(block.timestamp),
+                end: uint64(block.timestamp) + uint64(duration)
+            })
         );
 
         _mint(_receiver, mintAmount);
@@ -277,5 +281,28 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         // burn pool shares so that resulting are equal to deposit amount
         _burn(_user, userDeposit.shareAmount - userDeposit.amount);
         depositsOf[_user][_depositId].shareAmount = userDeposit.amount;
+    }
+
+    /*
+    * @dev allow the admin to refund a user's deposit early
+    * @param _depositId - the deposit index
+    * @param _user - the user who deposited and should receive the refund
+    */
+    function refund(uint _depositId, address _user) external {
+        require(_msgSender() == admin, "TimeLockPool: only admin can issue refunds");
+        if (_depositId >= depositsOf[_user].length) {
+            revert NonExistingDepositError();
+        }
+        Deposit memory userDeposit = depositsOf[_user][_depositId];
+
+        // remove Deposit
+        depositsOf[_user][_depositId] = depositsOf[_user][depositsOf[_user].length - 1];
+        depositsOf[_user].pop();
+
+        // burn pool shares
+        _burn(_user, userDeposit.shareAmount);
+
+        // return tokens
+        depositToken.safeTransfer(_user, userDeposit.amount);
     }
 }

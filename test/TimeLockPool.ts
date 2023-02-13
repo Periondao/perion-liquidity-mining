@@ -11,10 +11,7 @@ import {
 import {
   View,
   TestToken,
-  TimeLockPool,
   TestTimeLockPool,
-  ProxyAdmin,
-  TransparentUpgradeableProxy,
 } from "../typechain";
 import TimeTraveler from "../utils/TimeTraveler";
 const ESCROW_DURATION = 60 * 60 * 24 * 365;
@@ -36,10 +33,7 @@ describe("TimeLockPool", function () {
   let depositToken: TestToken;
   let rewardToken: TestToken;
   let timeLockPool: Contract;
-  let testTimeLockPoolImplementation: TimeLockPool;
   let escrowPool: TestTimeLockPool;
-  let proxyAdmin: ProxyAdmin;
-  let proxy: TransparentUpgradeableProxy;
 
   const timeTraveler = new TimeTraveler(hre.network.provider);
 
@@ -68,6 +62,7 @@ describe("TimeLockPool", function () {
       MAX_BONUS_ESCROW,
       ESCROW_DURATION,
       END_DATE,
+      account1.address
     );
 
     // Deploy the TimeLockPool implementation
@@ -83,6 +78,7 @@ describe("TimeLockPool", function () {
       MAX_BONUS.mul(10),
       MAX_LOCK_DURATION,
       END_DATE,
+      account1.address
     );
 
     const GOV_ROLE = await timeLockPool.GOV_ROLE();
@@ -203,6 +199,22 @@ describe("TimeLockPool", function () {
       await expect(timeLockPool.deposit(DEPOSIT_AMOUNT, 0, account3.address)).to.be.revertedWith(
         "ERC20: transfer amount exceeds allowance",
       );
+    });
+
+    it("allows the admin to refund a user", async() => {
+      const MIN_LOCK_DURATION = await timeLockPool.MIN_LOCK_DURATION();
+      await timeLockPool.deposit(DEPOSIT_AMOUNT, MIN_LOCK_DURATION, account3.address);
+      const preBalance = await depositToken.balanceOf(account3.address);
+      await timeLockPool.connect(account1).refund(0, account3.address);
+      const postBalance = await depositToken.balanceOf(account3.address);
+      expect(postBalance).to.equal(preBalance.add(DEPOSIT_AMOUNT));
+    });
+
+    it("does not allow anyone that is not the admin to refund a user", async() => {
+      const MIN_LOCK_DURATION = await timeLockPool.MIN_LOCK_DURATION();
+      await timeLockPool.deposit(DEPOSIT_AMOUNT, MIN_LOCK_DURATION, account3.address);
+      const tx = timeLockPool.connect(account2).refund(0, account3.address);
+      await expect(tx).to.be.revertedWith("TimeLockPool: only admin can issue refunds");
     });
   });
 
