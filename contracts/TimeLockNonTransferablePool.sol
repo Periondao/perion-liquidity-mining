@@ -21,7 +21,8 @@ contract TimeLockNonTransferablePool is TimeLockPool {
         uint256 _escrowDuration,
         uint256 _maxBonus,
         uint256 _maxLockDuration,
-        uint256 _endDate
+        uint256 _endDate,
+        address _admin
     ) public initializer {
         __TimeLockPool_init(
             _name,
@@ -33,7 +34,8 @@ contract TimeLockNonTransferablePool is TimeLockPool {
             _escrowDuration,
             _maxBonus,
             _maxLockDuration,
-            _endDate
+            _endDate,
+            _admin
         );
     }
 

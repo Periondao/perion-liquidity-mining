@@ -65,6 +65,7 @@ describe("BasePool", function () {
       MAX_BONUS_ESCROW,
       ESCROW_DURATION,
       END_DATE,
+      account1.address
     );
 
     const testBasePoolFactory = new TestBasePool__factory(deployer);

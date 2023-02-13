@@ -82,6 +82,7 @@ describe("TimeLockPool", function () {
       MAX_BONUS_ESCROW,
       ESCROW_DURATION,
       END_DATE,
+      account1.address
     );
 
     const timeLockNonTransferablePoolFactory = new TimeLockNonTransferablePool__factory(deployer);
@@ -99,6 +100,7 @@ describe("TimeLockPool", function () {
       MAX_BONUS.mul(10),
       MAX_LOCK_DURATION,
       END_DATE,
+      account1.address
     ];
 
     const TimeLockNonTransferablePoolInterface = new hre.ethers.utils.Interface(

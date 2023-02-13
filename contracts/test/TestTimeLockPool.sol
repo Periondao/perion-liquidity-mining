@@ -14,7 +14,8 @@ contract TestTimeLockPool is TimeLockPool {
         uint256 _escrowDuration,
         uint256 _maxBonus,
         uint256 _maxLockDuration,
-        uint256 _endDate
+        uint256 _endDate,
+        address _admin
     ) public initializer {
         initializeTest(
             _name,
@@ -26,7 +27,8 @@ contract TestTimeLockPool is TimeLockPool {
             _escrowDuration,
             _maxBonus,
             _maxLockDuration,
-            _endDate
+            _endDate,
+            _admin
         );
     }
 
@@ -40,7 +42,8 @@ contract TestTimeLockPool is TimeLockPool {
         uint256 _escrowDuration,
         uint256 _maxBonus,
         uint256 _maxLockDuration,
-        uint256 _endDate
+        uint256 _endDate,
+        address _admin
     ) public initializer {
         __TimeLockPool_init(
             _name,
@@ -52,7 +55,8 @@ contract TestTimeLockPool is TimeLockPool {
             _escrowDuration,
             _maxBonus,
             _maxLockDuration,
-            _endDate
+            _endDate,
+            _admin
         );
     }
 }
