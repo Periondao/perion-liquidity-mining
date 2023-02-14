@@ -51,6 +51,8 @@ const MAINNET_ESCROW_POOL = "0x0000000000000000000000000000000000000000";
 const MAINNET_SPERC = "0xf64F48A4E27bBC299273532B26c83662ef776b7e";
 // 0xc014286360Ef45aB15A6D3f6Bb1E54a03352aC8f | SLP PERC
 const MAINNET_SLP_PERC = "0xc014286360Ef45aB15A6D3f6Bb1E54a03352aC8f"
+// admin account TODO
+const ADMIN = "0xEdd6D7ba0FF9f4bC501a12529cb736CA76A4fe7e";
 
 // LOCALHOST //////////////////////////////////////////////////////////////////////
 // 0x7e9e4c0876B2102F33A1d82117Cc73B7FddD0032 | Perion Multisig
@@ -151,6 +153,7 @@ async function deployUpgradeable() {
     MAX_BONUS,
     MAX_LOCK_DURATION,
     END_DATE,
+    ADMIN
   ];
 
   const PERCPoolImplementationInterface = new hre.ethers.utils.Interface(
@@ -160,7 +163,7 @@ async function deployUpgradeable() {
     "initialize",
     PERCPoolInitializeParams,
   );
-
+  
   // Deploy the proxy and initialize with specific pool parameters
   const PERCPoolProxyDeploy = new TransparentUpgradeableProxy__factory(signers[0]);
   percPoolProxyDeploy = PERCPoolProxyDeploy.attach(SPERC);
@@ -199,6 +202,7 @@ async function deployUpgradeable() {
     MAX_BONUS,
     MAX_LOCK_DURATION,
     END_DATE,
+    ADMIN
   ];
 
   const PERCETHLPPoolImplementationInterface = new hre.ethers.utils.Interface(
