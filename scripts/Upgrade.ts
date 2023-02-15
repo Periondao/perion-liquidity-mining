@@ -163,7 +163,7 @@ async function deployUpgradeable() {
     "initialize",
     PERCPoolInitializeParams,
   );
-  
+
   // Deploy the proxy and initialize with specific pool parameters
   const PERCPoolProxyDeploy = new TransparentUpgradeableProxy__factory(signers[0]);
   percPoolProxyDeploy = PERCPoolProxyDeploy.attach(SPERC);
@@ -213,13 +213,10 @@ async function deployUpgradeable() {
     PERCETHLPPoolInitializeParams,
   );
 
-  const SLP_PERCPoolProxyDeploy = new TransparentUpgradeableProxy__factory(signers[0]);
-  percEthlpPoolProxyDeploy = SLP_PERCPoolProxyDeploy.attach(SLP_PERC);
+  console.log(PERCETHLPPool_encoded_data);
 
-  // TODO this would need to be done via the multisig interface
-  await percEthlpPoolProxyDeploy.upgradeToAndCall(percEthlpPoolImplementation.address, PERCETHLPPool_encoded_data);
-
-  console.log("Upgrade complete.")
+  // example: https://goerli.etherscan.io/tx/0x206452d6457109e8a66ceeb4c90c2313c8383f85e933607c1baeb40eac550cee
+  console.log("Implementations deployed, upgrade via the ProxyAdmin upgradeAndCall");
 }
 
 deployUpgradeable().catch(error => {

@@ -77,6 +77,8 @@ let PERC_TOKEN: string;
 let PERC_ETHLP_TOKEN: string;
 let ESCROW_POOL: string;
 let MULTISIG: string;
+const ADMIN = "0xEdd6D7ba0FF9f4bC501a12529cb736CA76A4fe7e";
+
 
 async function deployUpgradeable() {
   const signers = await ethers.getSigners();
@@ -140,6 +142,7 @@ async function deployUpgradeable() {
     MAX_BONUS,
     MAX_LOCK_DURATION,
     END_DATE,
+    ADMIN
   ];
 
   const PERCPoolImplementationInterface = new hre.ethers.utils.Interface(
@@ -205,6 +208,7 @@ async function deployUpgradeable() {
     MAX_BONUS,
     MAX_LOCK_DURATION,
     END_DATE,
+    ADMIN
   ];
 
   const PERCETHLPPoolImplementationInterface = new hre.ethers.utils.Interface(
@@ -235,6 +239,13 @@ async function deployUpgradeable() {
     PERCETHLPPoolImplementationInterface,
     signers[0],
   ) as TimeLockNonTransferablePool;
+
+  percEthlpPoolImplementation = await PERCPERCETHLPPoolFactory.deploy();
+  await percEthlpPoolImplementation.deployed();
+  console.log(`  PERCETHLP Pool Implementation deployed to ${percEthlpPoolImplementation.address}`, "\n");
+
+  await percEthlpPoolProxyAdmin.upgradeAndCall(percEthlpPoolProxy.address, percEthlpPoolImplementation.address, PERCETHLPPool_encoded_data);
+  console.log("UPGRADED to " + percEthlpPoolImplementation.address);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Role assignment ////////////////////////////////////////////////////////////////////////////////////

@@ -58,6 +58,7 @@ contract TimeLockPool is BasePool, ITimeLockPool {
         }
         endDate = _endDate;
         maxLockDuration = _maxLockDuration;
+        // TODO upgrade works but cannot be reinitialised, find a work around
         admin = _admin;
     }
 
