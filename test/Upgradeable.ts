@@ -1,9 +1,8 @@
 import { parseEther, formatEther } from "@ethersproject/units";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
-import { BigNumber, constants, Contract } from "ethers";
-import hre, { ethers } from "hardhat";
+import { constants, Contract } from "ethers";
+import hre, { ethers, network } from "hardhat";
 
 import {
   TestToken__factory,
@@ -13,10 +12,10 @@ import {
   ProxyAdmin__factory,
   TransparentUpgradeableProxy__factory,
   TimeLockNonTransferablePoolV2__factory,
+  TimeLockNonTransferablePoolV2Test__factory,
 } from "../typechain";
 import {
   TestToken,
-  TimeLockPool,
   TestTimeLockPool,
   TimeLockNonTransferablePool,
   ProxyAdmin,
@@ -26,7 +25,8 @@ import {
 
 import TimeTraveler from "../utils/TimeTraveler";
 import * as TimeLockNonTransferablePoolJSON from "../artifacts/contracts/TimeLockNonTransferablePool.sol/TimeLockNonTransferablePool.json";
-import * as TimeLockNonTransferablePoolV2JSON from "../artifacts/contracts/test/TimeLockNonTransferablePoolV2.sol/TimeLockNonTransferablePoolV2.json";
+import * as TimeLockNonTransferablePoolV2TestJSON from "../artifacts/contracts/test/TimeLockNonTransferablePoolV2Test.sol/TimeLockNonTransferablePoolV2Test.json";
+import * as TimeLockNonTransferablePoolV2JSON from "../artifacts/contracts/v2/TimeLockNonTransferablePoolV2.sol/TimeLockNonTransferablePoolV2.json";
 
 const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const ESCROW_PORTION = parseEther("0.77");
@@ -39,6 +39,7 @@ const INITIAL_MINT = parseEther("1000000");
 describe("TimeLockPool", function () {
   let deployer: SignerWithAddress;
   let governance: SignerWithAddress;
+  let refunder: SignerWithAddress;
   let account1: SignerWithAddress;
   let account2: SignerWithAddress;
   let account3: SignerWithAddress;
@@ -56,6 +57,15 @@ describe("TimeLockPool", function () {
 
   before(async () => {
     [deployer, governance, account1, account2, account3, ...signers] = await hre.ethers.getSigners();
+
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: ["0x1CFc93ebaA24DA3A314CF35C4d5487348C8F6791"],
+    });
+
+    refunder = await ethers.getSigner("0x1CFc93ebaA24DA3A314CF35C4d5487348C8F6791");
+
+    await account2.sendTransaction({ to: refunder.address, value: parseEther("1"), from: account2.address });
 
     const testTokenFactory = new TestToken__factory(deployer);
 
@@ -163,19 +173,16 @@ describe("TimeLockPool", function () {
 
     describe("upgrade", async () => {
       it("Should set another implementation correctly with it's functions", async () => {
-        let timeLockNonTransferablePoolImplementationV2: TimeLockNonTransferablePoolV2;
-
-        const TimeLockNonTransferablePoolV2Factory = new TimeLockNonTransferablePoolV2__factory(deployer);
-        timeLockNonTransferablePoolImplementationV2 = await TimeLockNonTransferablePoolV2Factory.deploy();
+        const TimeLockNonTransferablePoolV2Factory = new TimeLockNonTransferablePoolV2Test__factory(deployer);
+        const timeLockNonTransferablePoolImplementationV2 = await TimeLockNonTransferablePoolV2Factory.deploy();
 
         await proxyAdmin
           .connect(governance)
           .upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
 
-        let timeLockNonTransferablePoolV2: Contract;
-        timeLockNonTransferablePoolV2 = new ethers.Contract(
+        const timeLockNonTransferablePoolV2 = new ethers.Contract(
           proxy.address,
-          JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
+          JSON.stringify(TimeLockNonTransferablePoolV2TestJSON.abi),
           deployer,
         );
 
@@ -214,7 +221,7 @@ describe("TimeLockPool", function () {
         let timeLockNonTransferablePoolV2: Contract;
         timeLockNonTransferablePoolV2 = new ethers.Contract(
           proxy.address,
-          JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
+          JSON.stringify(TimeLockNonTransferablePoolV2TestJSON.abi),
           deployer,
         );
 
@@ -268,7 +275,7 @@ describe("TimeLockPool", function () {
         let timeLockNonTransferablePoolV2: Contract;
         timeLockNonTransferablePoolV2 = new ethers.Contract(
           proxy.address,
-          JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
+          JSON.stringify(TimeLockNonTransferablePoolV2TestJSON.abi),
           deployer,
         );
 
@@ -276,6 +283,30 @@ describe("TimeLockPool", function () {
           const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
           expect(slot[i]).to.be.eq(slotV2);
         }
+      });
+
+      it("allows the admin to refund a user", async () => {
+        const timeLockNonTransferablePoolFactoryV2 = new TimeLockNonTransferablePoolV2__factory(deployer);
+        const timeLockNonTransferablePoolImplementationV2 = await timeLockNonTransferablePoolFactoryV2.deploy();
+        await proxyAdmin
+          .connect(governance)
+          .upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
+        const timeLockNonTransferablePoolV2 = new ethers.Contract(
+          proxy.address,
+          JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
+          deployer,
+        );
+
+        const MIN_LOCK_DURATION = await timeLockNonTransferablePoolV2.MIN_LOCK_DURATION();
+        await timeLockNonTransferablePoolV2
+          .connect(account1)
+          .deposit(parseEther("0.01"), MIN_LOCK_DURATION, account1.address);
+        const preBalance = await depositToken.balanceOf(account1.address);
+        const tx = timeLockNonTransferablePoolV2.connect(account1).refund(0, account1.address);
+        await expect(tx).to.be.revertedWith("TimeLockPool: only refunder can issue refunds");
+        await timeLockNonTransferablePoolV2.connect(refunder).refund(0, account1.address);
+        const postBalance = await depositToken.balanceOf(account1.address);
+        expect(postBalance).to.equal(preBalance.add(parseEther("0.01")));
       });
 
       it("Should find a slot that changed", async () => {
@@ -306,7 +337,7 @@ describe("TimeLockPool", function () {
         let timeLockNonTransferablePoolV2: Contract;
         timeLockNonTransferablePoolV2 = new ethers.Contract(
           proxy.address,
-          JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
+          JSON.stringify(TimeLockNonTransferablePoolV2TestJSON.abi),
           deployer,
         );
 

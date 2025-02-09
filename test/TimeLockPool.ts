@@ -3,19 +3,8 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber, constants, Contract } from "ethers";
 import hre, { ethers } from "hardhat";
-import {
-  View__factory,
-  TestToken__factory,
-  TestTimeLockPool__factory,
-} from "../typechain";
-import {
-  View,
-  TestToken,
-  TimeLockPool,
-  TestTimeLockPool,
-  ProxyAdmin,
-  TransparentUpgradeableProxy,
-} from "../typechain";
+import { View__factory, TestToken__factory, TestTimeLockPool__factory } from "../typechain";
+import { View, TestToken, TimeLockPool, TestTimeLockPool, ProxyAdmin, TransparentUpgradeableProxy } from "../typechain";
 import TimeTraveler from "../utils/TimeTraveler";
 const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const ESCROW_PORTION = parseEther("0.77");
@@ -247,7 +236,7 @@ describe("TimeLockPool", function () {
       await expect(timeLockPool.extendLock(0, 0)).to.be.revertedWith("ZeroDurationError()");
     });
 
-    it("should not allow you to deposit past the endDate", async() => {
+    it("should not allow you to deposit past the endDate", async () => {
       const end = await timeLockPool.endDate();
       const minLockDuration = await timeLockPool.MIN_LOCK_DURATION();
       await timeTraveler.setNextBlockTimestamp(end - minLockDuration.mul(2));

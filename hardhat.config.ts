@@ -27,6 +27,8 @@ const chainIds = {
   mainnet: 1,
   rinkeby: 4,
   ropsten: 3,
+  sepolia: 11155111,
+  arbitrumOne: 42161,
 };
 
 // Ensure that we have all the environment variables we need.
@@ -68,6 +70,8 @@ const config: HardhatUserConfig = {
     kovan: getChainConfig("kovan"),
     rinkeby: getChainConfig("rinkeby"),
     ropsten: getChainConfig("ropsten"),
+    sepolia: getChainConfig("sepolia"),
+    arbitrumOne: getChainConfig("arbitrumOne"),
     mainnet: { gasPrice: 120000000000, ...getChainConfig("mainnet") },
   },
   paths: {

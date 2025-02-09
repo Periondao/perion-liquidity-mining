@@ -40,11 +40,11 @@ const END_DATE = 1864558800; // 1 Feb 2029
 
 // MAINNET ////////////////////////////////////////////////////////////////////////
 // 0x12D73beE50F0b9E06B35Fdef93E563C965796482 | Perion Multisig
-const MAINNET_MULTISIG = "0x12D73beE50F0b9E06B35Fdef93E563C965796482";
+const MAINNET_MULTISIG = "0x42ea529282DDE0AA87B42d9E83316eb23FE62c3f";
 // 0x60bE1e1fE41c1370ADaF5d8e66f07Cf1C2Df2268 | Perion (PERC)
-const MAINNET_PERC_TOKEN = "0x60bE1e1fE41c1370ADaF5d8e66f07Cf1C2Df2268";
+const MAINNET_PERC_TOKEN = "0x57A8D0D70628127E7e161c17018f644A5E5975C1"; //"0x60bE1e1fE41c1370ADaF5d8e66f07Cf1C2Df2268";
 // 0x45b6ffb13e5206dafe2cc8780e4ddc0e32496265 | MC/ETH Uni V2 LP (MCETHLP)
-const MAINNET_PERC_ETHLP_TOKEN = "0x45b6ffb13e5206dafe2cc8780e4ddc0e32496265";
+const MAINNET_PERC_ETHLP_TOKEN = "0x3dB5A78Ec7CF99bd7aC881CB737C2Be97AD8bBbb"; //"0x45b6ffb13e5206dafe2cc8780e4ddc0e32496265";
 // 0x0000000000000000000000000000000000000000 | Escrowed Perion (eMC)
 const MAINNET_ESCROW_POOL = "0x0000000000000000000000000000000000000000";
 
@@ -83,28 +83,28 @@ async function deployUpgradeable() {
 
   const chainChoosing = await question("Type 1 for Localhost, 2 for Mainnet or 3 for Görli: ");
 
-  if (chainChoosing == "1") {
-    // MAINNET ////////////////////////////////////////////////////////////////////////
-    MULTISIG = MAINNET_MULTISIG;
-    PERC_TOKEN = MAINNET_PERC_TOKEN;
-    PERC_ETHLP_TOKEN = MAINNET_PERC_ETHLP_TOKEN;
-    ESCROW_POOL = MAINNET_ESCROW_POOL;
-  } else if (chainChoosing == "2") {
-    // LOCALHOST //////////////////////////////////////////////////////////////////////
-    MULTISIG = LOCALHOST_MULTISIG;
-    PERC_TOKEN = LOCALHOST_MC_TOKEN;
-    PERC_ETHLP_TOKEN = LOCALHOST_MCETHLP_TOKEN;
-    ESCROW_POOL = LOCALHOST_ESCROW_POOL;
-  } else if (chainChoosing == "3") {
-    // GORLI //////////////////////////////////////////////////////////////////////
-    MULTISIG = GORLI_MULTISIG;
-    PERC_TOKEN = GORLI_PERC_TOKEN;
-    PERC_ETHLP_TOKEN = GORLI_SUSHI_LP_TOKEN;
-    ESCROW_POOL = GORLI_ESCROW_POOL;
-  } else {
-    console.log("Choose a different chain.");
-    return false;
-  }
+  // if (chainChoosing == "1") {
+  // MAINNET ////////////////////////////////////////////////////////////////////////
+  MULTISIG = MAINNET_MULTISIG;
+  PERC_TOKEN = MAINNET_PERC_TOKEN;
+  PERC_ETHLP_TOKEN = MAINNET_PERC_ETHLP_TOKEN;
+  ESCROW_POOL = MAINNET_ESCROW_POOL;
+  // } else if (chainChoosing == "2") {
+  //   // LOCALHOST //////////////////////////////////////////////////////////////////////
+  //   MULTISIG = LOCALHOST_MULTISIG;
+  //   PERC_TOKEN = LOCALHOST_MC_TOKEN;
+  //   PERC_ETHLP_TOKEN = LOCALHOST_MCETHLP_TOKEN;
+  //   ESCROW_POOL = LOCALHOST_ESCROW_POOL;
+  // } else if (chainChoosing == "3") {
+  //   // GORLI //////////////////////////////////////////////////////////////////////
+  //   MULTISIG = GORLI_MULTISIG;
+  //   PERC_TOKEN = GORLI_PERC_TOKEN;
+  //   PERC_ETHLP_TOKEN = GORLI_SUSHI_LP_TOKEN;
+  //   ESCROW_POOL = GORLI_ESCROW_POOL;
+  // } else {
+  //   console.log("Choose a different chain.");
+  //   return false;
+  // }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Deployment of MC Pool //////////////////////////////////////////////////////////////////////////////
@@ -286,7 +286,7 @@ async function deployUpgradeable() {
   try {
     await hre.run("verify:verify", {
       address: percPoolProxyDeploy.address,
-      constructorArguments: percPoolProxyContructorParams,
+      constructorArguments: [], //percPoolProxyContructorParams,
     });
   } catch (e) {
     console.log(e);
@@ -315,7 +315,7 @@ async function deployUpgradeable() {
   try {
     await hre.run("verify:verify", {
       address: percPoolProxyDeploy.address,
-      constructorArguments: percEthlpPoolProxyContructorParams,
+      constructorArguments: [], //percEthlpPoolProxyContructorParams,
     });
   } catch (e) {
     console.log(e);

@@ -6,12 +6,7 @@ import {
 } from "../typechain";
 import { constants } from "ethers";
 import { parseEther } from "@ethersproject/units";
-import { ethers } from "hardhat";
-
-const MAX_BONUS_ESCROW = parseEther("0");
-
-const END_DATE = 1768993200;
-const ESCROW_DURATION = 0;
+import hre, { ethers } from "hardhat";
 
 async function deployTokens() {
   const signers = await ethers.getSigners();
@@ -26,24 +21,23 @@ async function deployTokens() {
   await MCETHLPToken.deployed();
   console.log(`MCETHLPToken deployed to ${MCETHLPToken.address}`);
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Deployment of Escrow Pool //////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  console.log("Deploying escrow pool");
-  const EscrowPool: TimeLockNonTransferablePool = await new TimeLockNonTransferablePool__factory(signers[0]).deploy();
-  await EscrowPool.initialize(
-    "Escrowed Perion",
-    "EMC",
-    MCToken.address,
-    constants.AddressZero,
-    constants.AddressZero,
-    0,
-    0,
-    MAX_BONUS_ESCROW,
-    ESCROW_DURATION,
-    END_DATE,
-  );
-  console.log(`Escrow pool deployed to ${EscrowPool.address}`, "\n");
+  try {
+    await hre.run("verify:verify", {
+      address: MCToken.address,
+      constructorArguments: ["Perion", "PERC"],
+    });
+  } catch (e) {
+    console.log(e);
+  }
+
+  try {
+    await hre.run("verify:verify", {
+      address: MCToken.address,
+      constructorArguments: ["Sushi V2", "SUSHI-V2"],
+    });
+  } catch (e) {
+    console.log(e);
+  }
 }
 
 deployTokens().catch(error => {
