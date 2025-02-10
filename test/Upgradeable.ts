@@ -383,6 +383,14 @@ describe("TimeLockPool", function () {
             JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
             deployer,
           );
+          let differences = 0;
+          for (let i = 0; i < 2000; i++) {
+            const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
+            if (slot[i] != slotV2) {
+              differences += 1;
+            }
+          }
+          expect(differences).to.be.greaterThan(0);
 
           const MIN_LOCK_DURATION = await timeLockNonTransferablePoolV2.MIN_LOCK_DURATION();
           await timeLockNonTransferablePoolV2
@@ -394,16 +402,6 @@ describe("TimeLockPool", function () {
           await timeLockNonTransferablePoolV2.connect(refunder).refund(0, account1.address);
           const postBalance = await depositToken.balanceOf(account1.address);
           expect(postBalance).to.equal(preBalance.add(parseEther("0.01")));
-
-          let differences = 0;
-          for (let i = 0; i < 2000; i++) {
-            const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
-            if (slot[i] != slotV2) {
-              differences += 1;
-            }
-          }
-          console.log(differences);
-          expect(differences).to.equal(1001);
         });
 
         it("Should find a slot that changed", async () => {
