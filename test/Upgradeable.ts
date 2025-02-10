@@ -28,7 +28,6 @@ import * as TimeLockNonTransferablePoolJSON from "../artifacts/contracts/TimeLoc
 import * as TimeLockNonTransferablePoolV2TestJSON from "../artifacts/contracts/test/TimeLockNonTransferablePoolV2Test.sol/TimeLockNonTransferablePoolV2Test.json";
 import * as TimeLockNonTransferablePoolV2JSON from "../artifacts/contracts/v2/TimeLockNonTransferablePoolV2.sol/TimeLockNonTransferablePoolV2.json";
 
-
 const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const ESCROW_PORTION = parseEther("0.77");
 const MAX_BONUS = parseEther("10");
@@ -286,34 +285,25 @@ describe("TimeLockPool", function () {
         }
       });
 
-
-      describe("Refund upgrade", ()=>{
-
+      describe("Refund upgrade", () => {
         let MIN_LOCK_DURATION;
         let timeLockNonTransferablePoolV2: Contract;
 
         const DEPOSIT_0 = parseEther("0.01");
         const DEPOSIT_1 = parseEther("0.02");
 
-        beforeEach(async ()=>{
-          
+        beforeEach(async () => {
           MIN_LOCK_DURATION = await timeLockNonTransferablePool.MIN_LOCK_DURATION();
 
           /// Deposit Tokens Before Upgrade
           // 0
-          await timeLockNonTransferablePool
-            .connect(account1)
-            .deposit(DEPOSIT_0, MIN_LOCK_DURATION, account1.address);
-          // 1  
-          await timeLockNonTransferablePool
-            .connect(account1)
-            .deposit(DEPOSIT_1, MIN_LOCK_DURATION, account1.address);
-
+          await timeLockNonTransferablePool.connect(account1).deposit(DEPOSIT_0, MIN_LOCK_DURATION, account1.address);
+          // 1
+          await timeLockNonTransferablePool.connect(account1).deposit(DEPOSIT_1, MIN_LOCK_DURATION, account1.address);
 
           // Deploy Upgrade
           const timeLockNonTransferablePoolFactoryV2 = new TimeLockNonTransferablePoolV2__factory(deployer);
           const timeLockNonTransferablePoolImplementationV2 = await timeLockNonTransferablePoolFactoryV2.deploy();
-
 
           // Apply Upgrade
           await proxyAdmin
@@ -325,24 +315,20 @@ describe("TimeLockPool", function () {
             JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
             deployer,
           );
+        });
 
-
-        })
-
-        it("Refunder can issue refunds", async()=>{
+        it("Refunder can issue refunds", async () => {
           // Try to refund from admin
           await timeLockNonTransferablePoolV2.connect(refunder).refund(0, account1.address);
         });
-        it("Non-refunder can't issue refunds", async()=>{
+        it("Non-refunder can't issue refunds", async () => {
           // Try to refund from non-admin
           const tx = timeLockNonTransferablePoolV2.connect(account1).refund(0, account1.address);
           await expect(tx).to.be.revertedWith("TimeLockPool: only refunder can issue refunds");
-
         });
-        it("Refunds give back correct amount of tokens", async()=>{
-
+        it("Refunds give back correct amount of tokens", async () => {
           // First Refund
-          
+
           // Balance before they withdraw
           const preBalance0 = await depositToken.balanceOf(account1.address);
 
@@ -353,7 +339,6 @@ describe("TimeLockPool", function () {
 
           // Succeed
           expect(postBalance0).to.equal(preBalance0.add(DEPOSIT_0));
-
 
           // Second Refund
 
@@ -367,72 +352,101 @@ describe("TimeLockPool", function () {
 
           // Succeed
           expect(postBalance1).to.equal(preBalance1.add(DEPOSIT_1));
-
-
         });
-        it("Refund removes the deposit", async()=>{
-
-
+        it("Refund removes the deposit", async () => {
           const despositBefore = await timeLockNonTransferablePool.depositsOf(account1.address, 1);
 
           await timeLockNonTransferablePoolV2.connect(refunder).refund(0, account1.address);
 
           let fails = false;
-          try{
+          try {
             const despositAfter = await timeLockNonTransferablePool.depositsOf(account1.address, 1);
-          }catch(e){
+          } catch (e) {
             fails = true;
           }
 
           expect(fails).to.equal(true);
-
-
         });
 
-      });
-
-
-
-      it("Should find a slot that changed", async () => {
-        let slot: string[] = new Array();
-        for (let i = 0; i < 2000; i++) {
-          slot.push(await hre.ethers.provider.getStorageAt(timeLockNonTransferablePool.address, i));
-        }
-
-        const DEPOSIT_AMOUNT = parseEther("10");
-        await timeLockNonTransferablePool.deposit(DEPOSIT_AMOUNT, MAX_LOCK_DURATION / 12, account1.address);
-        const startUserDepostit = await timeLockNonTransferablePool.depositsOf(account1.address, 0);
-        const nextBlockTimestamp = startUserDepostit.end
-          .sub(startUserDepostit.start)
-          .div(2)
-          .add(startUserDepostit.start)
-          .toNumber();
-        // Fastforward to half of the deposit time elapsed
-        await timeTraveler.setNextBlockTimestamp(nextBlockTimestamp);
-        await timeLockNonTransferablePool.extendLock(0, MAX_LOCK_DURATION / 12);
-
-        // Upgrade
-        const timeLockNonTransferablePoolFactoryV2 = new TimeLockNonTransferablePoolV2__factory(deployer);
-        let timeLockNonTransferablePoolImplementationV2: TimeLockNonTransferablePoolV2;
-        timeLockNonTransferablePoolImplementationV2 = await timeLockNonTransferablePoolFactoryV2.deploy();
-        await proxyAdmin
-          .connect(governance)
-          .upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
-        let timeLockNonTransferablePoolV2: Contract;
-        timeLockNonTransferablePoolV2 = new ethers.Contract(
-          proxy.address,
-          JSON.stringify(TimeLockNonTransferablePoolV2TestJSON.abi),
-          deployer,
-        );
-
-        let differences = 0;
-        for (let i = 0; i < 2000; i++) {
-          const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
-          if (slot[i] != slotV2) {
-            differences += 1;
+        it("upgrades & allows the admin to refund a user", async () => {
+          let slot: string[] = new Array();
+          for (let i = 0; i < 1000; i++) {
+            slot.push(await hre.ethers.provider.getStorageAt(timeLockNonTransferablePool.address, i));
           }
-        }
-        expect(differences).to.be.above(0);
+          const timeLockNonTransferablePoolFactoryV2 = new TimeLockNonTransferablePoolV2__factory(deployer);
+          const timeLockNonTransferablePoolImplementationV2 = await timeLockNonTransferablePoolFactoryV2.deploy();
+          await proxyAdmin
+            .connect(governance)
+            .upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
+          const timeLockNonTransferablePoolV2 = new ethers.Contract(
+            proxy.address,
+            JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
+            deployer,
+          );
+
+          const MIN_LOCK_DURATION = await timeLockNonTransferablePoolV2.MIN_LOCK_DURATION();
+          await timeLockNonTransferablePoolV2
+            .connect(account1)
+            .deposit(parseEther("0.01"), MIN_LOCK_DURATION, account1.address);
+          const preBalance = await depositToken.balanceOf(account1.address);
+          const tx = timeLockNonTransferablePoolV2.connect(account1).refund(0, account1.address);
+          await expect(tx).to.be.revertedWith("TimeLockPool: only refunder can issue refunds");
+          await timeLockNonTransferablePoolV2.connect(refunder).refund(0, account1.address);
+          const postBalance = await depositToken.balanceOf(account1.address);
+          expect(postBalance).to.equal(preBalance.add(parseEther("0.01")));
+
+          let differences = 0;
+          for (let i = 0; i < 2000; i++) {
+            const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
+            if (slot[i] != slotV2) {
+              differences += 1;
+            }
+          }
+          console.log(differences);
+          expect(differences).to.equal(1001);
+        });
+
+        it("Should find a slot that changed", async () => {
+          let slot: string[] = new Array();
+          for (let i = 0; i < 2000; i++) {
+            slot.push(await hre.ethers.provider.getStorageAt(timeLockNonTransferablePool.address, i));
+          }
+
+          const DEPOSIT_AMOUNT = parseEther("10");
+          await timeLockNonTransferablePool.deposit(DEPOSIT_AMOUNT, MAX_LOCK_DURATION / 12, account1.address);
+          const startUserDepostit = await timeLockNonTransferablePool.depositsOf(account1.address, 0);
+          const nextBlockTimestamp = startUserDepostit.end
+            .sub(startUserDepostit.start)
+            .div(2)
+            .add(startUserDepostit.start)
+            .toNumber();
+          // Fastforward to half of the deposit time elapsed
+          await timeTraveler.setNextBlockTimestamp(nextBlockTimestamp);
+          await timeLockNonTransferablePool.extendLock(0, MAX_LOCK_DURATION / 12);
+
+          // Upgrade
+          const timeLockNonTransferablePoolFactoryV2 = new TimeLockNonTransferablePoolV2__factory(deployer);
+          let timeLockNonTransferablePoolImplementationV2: TimeLockNonTransferablePoolV2;
+          timeLockNonTransferablePoolImplementationV2 = await timeLockNonTransferablePoolFactoryV2.deploy();
+          await proxyAdmin
+            .connect(governance)
+            .upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
+          let timeLockNonTransferablePoolV2: Contract;
+          timeLockNonTransferablePoolV2 = new ethers.Contract(
+            proxy.address,
+            JSON.stringify(TimeLockNonTransferablePoolV2TestJSON.abi),
+            deployer,
+          );
+
+          let differences = 0;
+          for (let i = 0; i < 2000; i++) {
+            const slotV2 = await hre.ethers.provider.getStorageAt(timeLockNonTransferablePoolV2.address, i);
+            if (slot[i] != slotV2) {
+              differences += 1;
+            }
+          }
+          expect(differences).to.be.above(0);
+        });
       });
     });
   });
