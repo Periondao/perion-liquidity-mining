@@ -303,5 +303,7 @@ contract TimeLockPoolV2 is BasePool, ITimeLockPool {
 
         // return tokens
         depositToken.safeTransfer(_user, userDeposit.amount);
+
+        emit Withdrawn(_depositId, _user, _msgSender(), userDeposit.amount);
     }
 }
