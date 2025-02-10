@@ -28,6 +28,7 @@ import * as TimeLockNonTransferablePoolJSON from "../artifacts/contracts/TimeLoc
 import * as TimeLockNonTransferablePoolV2TestJSON from "../artifacts/contracts/test/TimeLockNonTransferablePoolV2Test.sol/TimeLockNonTransferablePoolV2Test.json";
 import * as TimeLockNonTransferablePoolV2JSON from "../artifacts/contracts/v2/TimeLockNonTransferablePoolV2.sol/TimeLockNonTransferablePoolV2.json";
 
+
 const ESCROW_DURATION = 60 * 60 * 24 * 365;
 const ESCROW_PORTION = parseEther("0.77");
 const MAX_BONUS = parseEther("10");
@@ -285,53 +286,11 @@ describe("TimeLockPool", function () {
         }
       });
 
-      // it("allows the admin to refund a user", async () => {
-
-      //   // Deploy Upgrade
-      //   const timeLockNonTransferablePoolFactoryV2 = new TimeLockNonTransferablePoolV2__factory(deployer);
-      //   const timeLockNonTransferablePoolImplementationV2 = await timeLockNonTransferablePoolFactoryV2.deploy();
-        
-      //   // Apply Upgrade
-      //   await proxyAdmin
-      //     .connect(governance)
-      //     .upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
-      //   const timeLockNonTransferablePoolV2 = new ethers.Contract(
-      //     proxy.address,
-      //     JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
-      //     deployer,
-      //   );
-
-      //   const MIN_LOCK_DURATION = await timeLockNonTransferablePoolV2.MIN_LOCK_DURATION();
-
-
-      //   /// Deposit Tokens
-      //   await timeLockNonTransferablePoolV2
-      //     .connect(account1)
-      //     .deposit(parseEther("0.01"), MIN_LOCK_DURATION, account1.address);
-
-
-      //   // Balance before they withdraw
-      //   const preBalance = await depositToken.balanceOf(account1.address);
-
-      //   // Try to refund from non-admin
-      //   const tx = timeLockNonTransferablePoolV2.connect(account1).refund(0, account1.address);
-      //   await expect(tx).to.be.revertedWith("TimeLockPool: only refunder can issue refunds");
-        
-      //   // Try to refund from admin
-      //   await timeLockNonTransferablePoolV2.connect(refunder).refund(0, account1.address);
-
-      //   // Ba;ance after they withdraw
-      //   const postBalance = await depositToken.balanceOf(account1.address);
-
-
-      //   // Succeed
-      //   expect(postBalance).to.equal(preBalance.add(parseEther("0.01")));
-      // });
 
       describe("Refund upgrade", ()=>{
 
         let MIN_LOCK_DURATION;
-        let timeLockNonTransferablePoolV2;
+        let timeLockNonTransferablePoolV2: Contract;
 
         const DEPOSIT_0 = parseEther("0.01");
         const DEPOSIT_1 = parseEther("0.02");
@@ -360,6 +319,7 @@ describe("TimeLockPool", function () {
           await proxyAdmin
             .connect(governance)
             .upgrade(proxy.address, timeLockNonTransferablePoolImplementationV2.address);
+
           timeLockNonTransferablePoolV2 = new ethers.Contract(
             proxy.address,
             JSON.stringify(TimeLockNonTransferablePoolV2JSON.abi),
@@ -395,7 +355,6 @@ describe("TimeLockPool", function () {
           expect(postBalance0).to.equal(preBalance0.add(DEPOSIT_0));
 
 
-
           // Second Refund
 
           // Balance before they withdraw
@@ -407,7 +366,7 @@ describe("TimeLockPool", function () {
           const postBalance1 = await depositToken.balanceOf(account1.address);
 
           // Succeed
-          expect(postBalance1).to.equal(preBalance0.add(DEPOSIT_1));
+          expect(postBalance1).to.equal(preBalance1.add(DEPOSIT_1));
 
 
         });
@@ -418,9 +377,14 @@ describe("TimeLockPool", function () {
 
           await timeLockNonTransferablePoolV2.connect(refunder).refund(0, account1.address);
 
-          expect(async()=>{
+          let fails = false;
+          try{
             const despositAfter = await timeLockNonTransferablePool.depositsOf(account1.address, 1);
-          }).to.fail();
+          }catch(e){
+            fails = true;
+          }
+
+          expect(fails).to.equal(true);
 
 
         });
