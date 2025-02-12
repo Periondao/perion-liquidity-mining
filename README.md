@@ -6,6 +6,10 @@ This repo contains the smart contracts for Perion's staking program. Perion liqu
 
 Perion DAO will distribute rewards in PERC with 80% of the rewards going to sushi swap LP stakers and 20% going to PERC stakers.
 
+## V2 upgrade
+
+On the 11th of Feb 2025, perion upgraded the contract to v2. V2 includes a function to allow the `ProxyAdmin` owner to refund depositors. This upgrade was performed on both staking pools, and the `ProxyAdmin` owner address was hardcoded to `0x1CFc93ebaA24DA3A314CF35C4d5487348C8F6791` to prevent having to modify any storage. The script used to perform this upgrade can be found in `scripts/Upgrade.ts`.
+
 ## Duration
 
 This staking program will go on until the 22nd of January 2026. Users will not be able to stake past this date. Users can stake for a minimum of 1 month and a maximum of 36 months (or until the end date, whichever comes first).
