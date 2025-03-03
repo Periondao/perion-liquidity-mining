@@ -64,6 +64,7 @@ describe("BasePool", function () {
       0,
       MAX_BONUS_ESCROW,
       ESCROW_DURATION,
+      // @ts-ignore
       END_DATE,
     );
 

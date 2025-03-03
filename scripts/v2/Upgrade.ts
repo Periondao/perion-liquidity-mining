@@ -1,6 +1,6 @@
 // @ts-ignore
 import hre, { ethers } from "hardhat";
-import { ProxyAdmin__factory, TimeLockNonTransferablePoolV2__factory } from "../typechain";
+import { ProxyAdmin__factory, TimeLockNonTransferablePoolV2__factory } from "../../typechain";
 
 const proxyStakingContract = "0xc014286360Ef45aB15A6D3f6Bb1E54a03352aC8f";
 // sPERC: 0xf64F48A4E27bBC299273532B26c83662ef776b7e
