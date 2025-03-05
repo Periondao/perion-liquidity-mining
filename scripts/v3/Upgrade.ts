@@ -61,6 +61,10 @@ async function main() {
   );
 
   const tx = await proxyAdminContract.upgradeAndCall(proxyStakingContract, newImpl.address, PERCETHLPPool_encoded_data);
+
+  // TODO
+  await newImpl.attach(proxyStakingContract).connect(signer).distributeRewards(BigInt(24539));
+
   console.log(tx.hash);
 }
 
