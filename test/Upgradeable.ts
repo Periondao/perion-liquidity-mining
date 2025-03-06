@@ -46,6 +46,7 @@ describe("TimeLockPool", function () {
   let account1: SignerWithAddress;
   let account2: SignerWithAddress;
   let account3: SignerWithAddress;
+  let account4: SignerWithAddress;
   let signers: SignerWithAddress[];
 
   let depositToken: TestToken;
@@ -59,7 +60,7 @@ describe("TimeLockPool", function () {
   const timeTraveler = new TimeTraveler(hre.network.provider);
 
   before(async () => {
-    [deployer, governance, account1, account2, account3, ...signers] = await hre.ethers.getSigners();
+    [deployer, governance, account1, account2, account3, account4, ...signers] = await hre.ethers.getSigners();
 
     await network.provider.request({
       method: "hardhat_impersonateAccount",
@@ -353,6 +354,35 @@ describe("TimeLockPool", function () {
 
           it("Distribute rewards should pass when using upgrade with init", async () => {
             await v3Proxy.connect(refunder).distributeRewards(10);
+          });
+
+          it("Pre existing balances should still exist post upgrade", async () => {
+            const existingDeposit = await v3Proxy.getTotalDeposit(account1.address);
+            expect(existingDeposit).to.be.gt(0);
+          });
+
+          it("Should allow the user to withdraw after maturity", async () => {
+            await depositToken.mint(account4.address, parseEther("1"));
+            await depositToken.connect(account4).approve(v3Proxy.address, parseEther("1"));
+            await v3Proxy.connect(account4).deposit(parseEther("1"), MIN_LOCK_DURATION, account4.address);
+            await timeTraveler.increaseTime(MAX_LOCK_DURATION);
+            await v3Proxy.connect(account4).withdraw(0, account3.address);
+
+            const timeLockPoolBalance = await v3Proxy.balanceOf(account4.address);
+            const totalDeposit = await v3Proxy.getTotalDeposit(account4.address);
+            const depositTokenBalance = await depositToken.balanceOf(account3.address);
+
+            expect(timeLockPoolBalance).to.eq(0);
+            expect(totalDeposit).to.eq(0);
+            expect(depositTokenBalance).to.eq(parseEther("1"));
+          });
+
+          it("Shouldn't allow the user to withdraw before maturity", async () => {
+            await depositToken.mint(account4.address, parseEther("1"));
+            await depositToken.connect(account4).approve(v3Proxy.address, parseEther("1"));
+            await v3Proxy.connect(account4).deposit(parseEther("1"), MIN_LOCK_DURATION, account4.address);
+            const tx = v3Proxy.connect(account4).withdraw(0, account3.address);
+            await expect(tx).to.revertedWith("");
           });
 
           it("Should be able to claim rewards", async () => {
