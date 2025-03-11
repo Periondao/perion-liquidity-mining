@@ -14,8 +14,7 @@ const MAX_BONUS = parseEther("36");
 // Maximum duration that a lock can have
 const MAX_LOCK_DURATION = 60 * 60 * 24 * 365 * 3;
 // end date of the staking program
-// TODO can change this to the actual end date
-const END_DATE = 1864558800; // 1 Feb 2029
+const END_DATE = 1865116800; // 7 Feb 2029
 
 const proxyStakingContract = "0xc014286360Ef45aB15A6D3f6Bb1E54a03352aC8f";
 // sPERC: 0xf64F48A4E27bBC299273532B26c83662ef776b7e
@@ -42,6 +41,7 @@ async function main() {
     JSON.stringify(TimeLockNonTransferablePoolV3__factory.abi),
   );
 
+  // TODO sanity check sPERC params as well
   const PERCETHLPPoolInitializeParams = [
     "Staked Perion Sushi LP",
     "sPERC-LP",
@@ -62,7 +62,7 @@ async function main() {
 
   const tx = await proxyAdminContract.upgradeAndCall(proxyStakingContract, newImpl.address, PERCETHLPPool_encoded_data);
 
-  // 28 days ago 28 * 942.4
+  // 28 days ago (28 * 942.4)
   await newImpl.attach(proxyStakingContract).connect(signer).distributeRewards(parseEther("26387.2"));
 
   console.log(tx.hash);
